@@ -3,3 +3,13 @@
 backend/backend/__pycache__/
 backend/api/__pycache__/
 backend/api/migrations/__pycache__/
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.log
