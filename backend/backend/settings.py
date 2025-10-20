@@ -138,5 +138,5 @@ DB_USER = os.environ['MONGODB_CLIENT_USERNAME']
 DB_PASSWORD = os.environ['MONGODB_CLIENT_PASSWORD']
 MONGODB_NAME = os.environ['MONGODB_DB_NAME']
 MONGODB_URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{MONGODB_NAME}.2h0tvpx.mongodb.net/?retryWrites=true&ssl=true&w=majority&appName={MONGODB_NAME}'
-print(MONGODB_URI)
+
 
