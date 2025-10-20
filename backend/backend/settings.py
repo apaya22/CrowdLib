@@ -11,9 +11,10 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+from dotenv import load_dotenv
 import os
 
-
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -83,15 +84,10 @@ CORS_ALLOWED_ORIGINS = [
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DB_USER = os.environ['MONGODB_CLIENT_USERNAME']
-DB_PASSWORD = os.environ['MONGODB_CLIENT_PASSWORD']
-
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'CLIENT': {
-            'host': f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@crowdlib.f4a0vz2.mongodb.net/?retryWrites=true&w=majority&appName=crowdlib',
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',  # Dummy db for django, we are handling the connection seperately
     }
 }
 
@@ -138,4 +134,9 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+DB_USER = os.environ['MONGODB_CLIENT_USERNAME']
+DB_PASSWORD = os.environ['MONGODB_CLIENT_PASSWORD']
+MONGODB_NAME = os.environ['MONGODB_DB_NAME']
+MONGODB_URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{MONGODB_NAME}.2h0tvpx.mongodb.net/?retryWrites=true&ssl=true&w=majority&appName={MONGODB_NAME}'
+print(MONGODB_URI)
 
