@@ -1,9 +1,9 @@
-from backend.database.controller import get_collection
+from backend.db_connect import get_collection
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
-import collections
 
-#Database User Control Model
+
+#Database User Operation Model
 class UserOperations:
     @staticmethod
     def create(username, email, oauth_provider, oauth_id, profile_picture=None, bio=None) -> str:
@@ -124,16 +124,19 @@ class UserOperations:
     @staticmethod
     def _try_delete_user(username):
         """
+        For testing
         Delete a user if they exist, otherwise returns None
         
         Args:
             user_id: User ObjectId as string
 
         Returns:
-            bool OR None: 
-                True if user exists and deletion was successful
-                False if user exists but the deletion failed
-                None if the user does not exist
+            bool/None: 
+                    True if user exists and deletion was successful
+                    
+                    False if user exists but the deletion failed
+                    
+                    None if the user does not exist
         """
         users_collection = get_collection('users')
         try:
@@ -144,7 +147,7 @@ class UserOperations:
         
     @staticmethod
     def get_all():
-        """Get all users (100 limit)"""
+        """Get all users (max 100)"""
         users_collection = get_collection('users')
         users = list(users_collection.find().limit(100))
 

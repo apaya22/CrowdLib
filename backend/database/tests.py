@@ -15,10 +15,10 @@ class UserOperationsTest(TestCase):
         self.assertIsNotNone(user_id)
         user_check = UserOperations.get_by_id(user_id)
         self.assertIsNotNone(user_check)
-        self.assertEqual(user_check['email'],"john@example.com")
-        self.assertEqual(user_check['username'],"john_doe")
-        self.assertEqual(user_check['bio'],"Software developer")
-        self.assertEqual(user_check['oauth_provider'],"google")
+        self.assertEqual(user_check['email'],"john@example.com") # pyright: ignore[reportOptionalSubscript]
+        self.assertEqual(user_check['username'],"john_doe")      # pyright: ignore[reportOptionalSubscript]
+        self.assertEqual(user_check['bio'],"Software developer") # pyright: ignore[reportOptionalSubscript]
+        self.assertEqual(user_check['oauth_provider'],"google")  # pyright: ignore[reportOptionalSubscript]
         
         
 
@@ -44,8 +44,8 @@ class UserOperationsTest(TestCase):
         user = UserOperations.get_by_id(user_id)
         
         self.assertIsNotNone(user)
-        self.assertEqual(user['bio'], 'Updated bio')
-        self.assertEqual(user['profile_picture'], 'https://s3.example.com/bob.jpg')
+        self.assertEqual(user['bio'], 'Updated bio') # pyright: ignore[reportOptionalSubscript]
+        self.assertEqual(user['profile_picture'], 'https://s3.example.com/bob.jpg') # pyright: ignore[reportOptionalSubscript]
         
         
     def test_delete_user(self):
