@@ -1,5 +1,5 @@
 from django.test import TestCase
-from api.mongo_operations import UserOperations
+from database.models import UserOperations
 
 class UserOperationsTest(TestCase):
     def test_create_user(self):
@@ -12,8 +12,15 @@ class UserOperationsTest(TestCase):
             oauth_id='google_123456',
             bio='Software developer'
         )
-
         self.assertIsNotNone(user_id)
+        user_check = UserOperations.get_by_id(user_id)
+        self.assertIsNotNone(user_check)
+        self.assertEqual(user_check['email'],"john@example.com")
+        self.assertEqual(user_check['username'],"john_doe")
+        self.assertEqual(user_check['bio'],"Software developer")
+        self.assertEqual(user_check['oauth_provider'],"google")
+        
+        
 
 
     def test_update_profile(self):

@@ -1,11 +1,12 @@
-from backend.db import get_collection
+from backend.database.controller import get_collection
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
+import collections
 
+#Database User Control Model
 class UserOperations:
-    
     @staticmethod
-    def create(username, email, oauth_provider, oauth_id, profile_picture=None, bio=None):
+    def create(username, email, oauth_provider, oauth_id, profile_picture=None, bio=None) -> str:
         """
         Create a new user
 
@@ -27,7 +28,7 @@ class UserOperations:
             raise ValueError("Username or email already exists")
 
         now = datetime.now(timezone.utc)
-
+        
         user_data = {
             'username': username,
             'email': email,
@@ -43,6 +44,7 @@ class UserOperations:
 
         result = users_collection.insert_one(user_data)
         return str(result.inserted_id)
+    
 
     @staticmethod
     def get_by_id(user_id):
@@ -96,7 +98,7 @@ class UserOperations:
         update_data = {key: value for key, value in kwargs.items() if key in allowed_fields}
 
         # Always update the updated_at timestamp
-        update_data['updated_at'] = datetime.utcnow()
+        update_data['updated_at'] = datetime.now(timezone.utc)
 
         result = users_collection.update_one(
             {'_id': ObjectId(user_id)},

@@ -3,7 +3,7 @@ import pymongo
 
 class MongoDBConnection:
     """
-    Class members manage the connection to MongoDB Atlas
+    Class manages the connection to MongoDB Atlas
     """
     _client = None
     _db = None
@@ -30,4 +30,5 @@ class MongoDBConnection:
 def get_collection(collection_name):
     """Helper function to get a collection"""
     db = MongoDBConnection.get_db()
+    db[collection_name]
     return db[collection_name]
