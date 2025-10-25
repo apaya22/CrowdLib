@@ -1,4 +1,4 @@
-from backend.db_connect import get_collection
+from core.db_connect import get_collection
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 
@@ -155,3 +155,7 @@ class UserOperations:
             user['_id'] = str(user['_id'])
 
         return users
+
+class StoryTemplates:
+    pass
+
