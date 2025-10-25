@@ -1,3 +1,7 @@
-from django.shortcuts import render
+from django.http import HttpResponse
 
-# Create your views here.
+def dashboard(request):
+    if request.user.is_authenticated:
+        return HttpResponse(f"Welcome {request.user.email}! You're logged in.")
+    else:
+        return HttpResponse("Please log in.")
