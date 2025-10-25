@@ -1,7 +1,7 @@
 .env
 .venv
 backend/core/__pycache__/
-backend/core/__pycache__/
+backend/*/__pycache__/
 backend/core/migrations/__pycache__/
 backend/node_modules
 */__pycache__/*

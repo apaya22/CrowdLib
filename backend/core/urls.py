@@ -14,9 +14,11 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from madlibs import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('api/madlibs/', views.get_all_madlibs, name='get_all_madlibs'),
+    path('api/madlibs/<str:madlib_id>/', views.get_madlib_by_id, name='get_madlib_by_id'),
+    path('api/madlibs/search/', views.search_madlibs, name='search_madlibs'),
 ]

@@ -1,145 +1,141 @@
-from pymongo.errors import DuplicateKeyError
-from bson.objectid import ObjectId
+from bson import ObjectId
+from typing import Optional, List, Dict
 from core.db_connect import get_collection
-from typing import List, Dict, Optional
-import logging
 
-logger = logging.getLogger(__name__)
 
-class MadlibTemplate:
+
+class MadLibTemplate:
     def __init__(self):
         self.collection = get_collection('story_templates')
+        
+    def create_indexs(self):
+        self.collection.create_index([('title', 1)])
 
 
-    def _create_indexes(self):
-        """Create indexes on frequently queried fields"""
-        self.collection.create_index("name", unique=True, sparse=True)
-        self.collection.create_index("_id")
-
-    def create_template(self, name: str, title: str, template: List[Dict]) -> str:
+    def get_by_id(self, madlib_id: str) -> Optional[Dict]:
         """
-        Create a new madlib template
+        Retrieve a madlib by MongoDB ObjectId
 
         Args:
-            name: Unique identifier for the template (e.g., 'haunted_castle')
-            title: Display title for the template
-            template: Array of template segments with 'type' and other fields
+            madlib_id: String representation of MongoDB ObjectId
 
         Returns:
-            The MongoDB ObjectId as a string
-        """
-        if not name or not title or not template:
-            raise ValueError("name, title, and template are required")
-
-        template_doc = {
-            "name": name,
-            "title": title,
-            "template": template,
-            "created_at": __import__('datetime').datetime.utcnow()
-        }
-
-        try:
-            result = self.collection.insert_one(template_doc)
-            logger.info(f"Template created with ID: {result.inserted_id}")
-            return str(result.inserted_id)
-        except DuplicateKeyError:
-            logger.error(f"Template with name '{name}' already exists")
-            raise ValueError(f"A template with name '{name}' already exists")
-
-    def get_template_by_id(self, template_id: str) -> Optional[Dict]:
-        """
-        Retrieve a template by its MongoDB ObjectId
-
-        Args:
-            template_id: MongoDB ObjectId as a string
-
-        Returns:
-            Template document or None if not found
+            Dictionary containing the madlib or None if not found
         """
         try:
-            obj_id = ObjectId(template_id)
-        except Exception:
-            logger.error(f"Invalid ObjectId format: {template_id}")
+            result = self.collection.find_one({'_id': ObjectId(madlib_id)})
+            if result:
+                result['_id'] = str(result['_id'])  # Convert ObjectId to string
+            return result
+        except Exception as e:
+            print(f"Error retrieving madlib by ID: {e}")
             return None
 
-        template = self.collection.find_one({"_id": obj_id})
 
-        if template:
-            template["_id"] = str(template["_id"])  # Convert ObjectId to string
-
-        return template
-
-    def get_template_by_name(self, name: str) -> Optional[Dict]:
+    def search_by_title(self, title: str, exact: bool = False) -> List[Dict]:
         """
-        Retrieve a template by its name
+        Search for madlibs by title
 
         Args:
-            name: Template name (unique identifier)
+            title: Title to search for
+            exact: If True, performs exact match; if False, performs case-insensitive partial match
 
         Returns:
-            Template document or None if not found
-        """
-        template = self.collection.find_one({"name": name})
-
-        if template:
-            template["_id"] = str(template["_id"])
-
-        return template
-
-    def get_all_template_titles(self) -> List[Dict]:
-        """
-        Get title and ID of all templates
-
-        Returns:
-            List of dicts with 'id' and 'title' fields
-        """
-        templates = self.collection.find({}, {"_id": 1, "title": 1}).sort("title", 1)
-
-        return [
-            {"id": str(template["_id"]), "title": template["title"]}
-            for template in templates
-        ]
-
-    def update_template(self, template_id: str, update_data: Dict) -> bool:
-        """
-        Update an existing template
-
-        Args:
-            template_id: MongoDB ObjectId as a string
-            update_data: Dictionary of fields to update
-
-        Returns:
-            True if updated, False if not found
+            List of matching madlibs
         """
         try:
-            obj_id = ObjectId(template_id)
-        except Exception:
-            logger.error(f"Invalid ObjectId format: {template_id}")
-            return False
+            if exact:
+                query = {'title': title}
+            else:
+                # Case-insensitive regex search
+                query = {'title': {'$regex': title, '$options': 'i'}}
 
-        result = self.collection.update_one(
-            {"_id": obj_id},
-            {"$set": update_data}
-        )
+            results = list(self.collection.find(query))
 
-        return result.modified_count > 0
+            # Convert ObjectId to string for JSON serialization
+            for result in results:
+                if isinstance(result.get('_id'), ObjectId):
+                    result['_id'] = str(result['_id'])
 
-    def delete_template(self, template_id: str) -> bool:
+            return results
+        except Exception as e:
+            print(f"Error searching madlibs by title: {e}")
+            return []
+
+    def get_all(self, limit: int = 100) -> List[Dict]:
         """
-        Delete a template by ID
+        Retrieve all madlibs with optional limit
 
         Args:
-            template_id: MongoDB ObjectId as a string
+            limit: Maximum number of madlibs to retrieve
 
         Returns:
-            True if deleted, False if not found
+            List of all madlibs
         """
         try:
-            obj_id = ObjectId(template_id)
-        except Exception:
-            logger.error(f"Invalid ObjectId format: {template_id}")
+            results = list(self.collection.find().limit(limit))
+
+            for result in results:
+                if isinstance(result.get('_id'), ObjectId):
+                    result['_id'] = str(result['_id'])
+
+            return results
+        except Exception as e:
+            print(f"Error retrieving all madlibs: {e}")
+            return []
+
+    def create(self, madlib_data: Dict) -> Optional[str]:
+        """
+        Create a new madlib
+
+        Args:
+            madlib_data: Dictionary containing madlib data
+
+        Returns:
+            String ID of created madlib or None if failed
+        """
+        try:
+            result = self.collection.insert_one(madlib_data)
+            return str(result.inserted_id)
+        except Exception as e:
+            print(f"Error creating madlib: {e}")
+            return None
+
+    def update(self, madlib_id: str, update_data: Dict) -> bool:
+        """
+        Update an existing madlib
+
+        Args:
+            madlib_id: String representation of MongoDB ObjectId
+            update_data: Dictionary containing fields to update
+
+        Returns:
+            True if update was successful, False otherwise
+        """
+        try:
+            result = self.collection.update_one(
+                {'_id': ObjectId(madlib_id)},
+                {'$set': update_data}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error updating madlib: {e}")
             return False
 
-        result = self.collection.delete_one({"_id": obj_id})
-        return result.deleted_count > 0
+    def delete(self, madlib_id: str) -> bool:
+        """
+        Delete a madlib
+
+        Args:
+            madlib_id: String representation of MongoDB ObjectId
+
+        Returns:
+            True if deletion was successful, False otherwise
+        """
+        try:
+            result = self.collection.delete_one({'_id': ObjectId(madlib_id)})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting madlib: {e}")
+            return False
 
