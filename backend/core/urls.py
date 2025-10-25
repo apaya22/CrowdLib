@@ -15,8 +15,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from django.shortcuts import redirect
+from database.views import dashboard
 
 urlpatterns = [
+    path('', lambda request: redirect('/auth/login/google-oauth2/')),  # redirect root to Google login
     path('admin/', admin.site.urls),
+    path('auth/', include('social_django.urls', namespace='social')),  # Google OAuth URLs
+    path('dashboard/', dashboard, name='dashboard'),  
 ]
+
