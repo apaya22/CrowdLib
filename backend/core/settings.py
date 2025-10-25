@@ -22,6 +22,9 @@ INSTALLED_APPS = [
     'database',  
     'social_django',  
     'users',
+    'feed',
+    'madlibs',
+    'social',
 ]
 
 MIDDLEWARE = [
@@ -35,7 +38,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'backend.urls'
+ROOT_URLCONF = 'core.urls'
 
 TEMPLATES = [
     {
@@ -54,7 +57,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'backend.wsgi.application'
+WSGI_APPLICATION = 'core.wsgi.application'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
