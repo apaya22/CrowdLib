@@ -1,5 +1,5 @@
 from django.test import TestCase
-from database.models import UserOperations
+from users.models import UserOperations
 
 class UserOperationsTest(TestCase):
     def test_create_user(self):
