@@ -1,6 +1,6 @@
 from pymongo.errors import DuplicateKeyError
 from bson.objectid import ObjectId
-from backend.core.db_connect import get_collection
+from core.db_connect import get_collection
 from typing import List, Dict, Optional
 import logging
 
