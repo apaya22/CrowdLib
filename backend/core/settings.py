@@ -19,7 +19,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
-    'database',  
+    'core',  
     'social_django',  
     'users',
     'feed',
