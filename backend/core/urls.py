@@ -14,11 +14,19 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+from django.contrib import admin
 from django.urls import path, include
-from madlibs import views
+from django.shortcuts import redirect
+from users.views import dashboard
 
 urlpatterns = [
+    path('', lambda request: redirect('/auth/login/google-oauth2/')),  # redirect root to Google login
+    path('admin/', admin.site.urls),
+    path('auth/', include('social_django.urls', namespace='social')),  # Google OAuth URLs
+    path('dashboard/', dashboard, name='dashboard'),  
     path('api/madlibs/', views.get_all_madlibs, name='get_all_madlibs'),
     path('api/madlibs/<str:madlib_id>/', views.get_madlib_by_id, name='get_madlib_by_id'),
     path('api/madlibs/search/', views.search_madlibs, name='search_madlibs'),
 ]
+
