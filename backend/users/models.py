@@ -17,6 +17,8 @@ class UserOperations:
             oauth_id: OAuth ID from the provider
             profile_picture: Optional S3 URL
             bio: Optional user bio
+            public: bool
+            banned: bool
 
         Returns:
             str: User ID (ObjectId as string)
@@ -38,6 +40,8 @@ class UserOperations:
             'bio': bio,
             'created_at': now,
             'updated_at': now,
+            'public': True,
+            'banned': False,
             'followers_count': 0,
             'following_count': 0
         }
