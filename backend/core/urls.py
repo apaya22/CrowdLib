@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, user_list, current_user_profile
+from madlibs.views import get_all_madlibs, get_madlib_by_id,search_madlibs
 
 urlpatterns = [
     path('', lambda request: redirect('/auth/login/google-oauth2/')),
@@ -14,8 +15,8 @@ urlpatterns = [
     path('api/users/', user_list, name='user-list'),
     path('api/users/current/', current_user_profile, name='current-user'),
     path('dashboard/', dashboard, name='dashboard'),  
-    path('api/madlibs/', views.get_all_madlibs, name='get_all_madlibs'),
-    path('api/madlibs/<str:madlib_id>/', views.get_madlib_by_id, name='get_madlib_by_id'),
-    path('api/madlibs/search/', views.search_madlibs, name='search_madlibs'),
+    path('api/madlibs/', get_all_madlibs, name='get_all_madlibs'),
+    path('api/madlibs/<str:madlib_id>/', get_madlib_by_id, name='get_madlib_by_id'),
+    path('api/madlibs/search/', search_madlibs, name='search_madlibs'),
 ]
 
