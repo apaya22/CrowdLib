@@ -1,32 +1,42 @@
 # users/pipeline.py
 from .models import UserOperations
 
-def create_mongodb_user(strategy, details, backend, user=None, *args, **kwargs):
-    if user and backend.name == 'google-oauth2':
-        # Extract data from Google
-        response = kwargs.get('response', {})
+def create_mongodb_user(strategy, details, backend, response, *args, **kwargs):
+    """Create MongoDB user BEFORE Django user is created"""
+    if backend.name == 'google-oauth2':
+        # Get data directly from Google response
+        email = response.get('email')
+        google_user_id = response.get('sub')
+        username = details.get('username', email.split('@')[0])
+        profile_picture = response.get('picture')
         
-        # Get Google user ID (not email)
-        google_user_id = response.get('sub') 
+        print(f"PIPELINE: Processing email '{email}'")
+        print(f"PIPELINE: Google ID: {google_user_id}")
         
         # Check if user already exists in MongoDB
-        mongodb_user = UserOperations.get_by_email(user.email)
+        mongodb_user = UserOperations.get_by_email(email)
         
         if not mongodb_user:
-            # Create user in MongoDB with the correct Google ID
+            print(f"PIPELINE: Creating NEW MongoDB user: {email}")
             try:
                 user_id = UserOperations.create(
-                    username=user.username,
-                    email=user.email,
+                    username=username,
+                    email=email,
                     oauth_provider='google',
                     oauth_id=google_user_id,
-                    profile_picture=response.get('picture'),
+                    profile_picture=profile_picture,
                     bio=None
                 )
-                print(f"Created MongoDB user: {user_id}")
+                print(f"PIPELINE: Created MongoDB user: {user_id}")
             except Exception as e:
-                print(f"Error creating MongoDB user: {e}")
+                print(f"PIPELINE: Error creating user: {e}")
         else:
-            print(f"User already exists in MongoDB: {mongodb_user['_id']}")
+            print(f"PIPELINE: User already exists: {mongodb_user['_id']}")
     
-    return {'user': user}
+    # Return the data for the next pipeline step
+    return {
+        'username': details.get('username'),
+        'email': response.get('email'),
+        'first_name': details.get('first_name'),
+        'last_name': details.get('last_name'),
+    }

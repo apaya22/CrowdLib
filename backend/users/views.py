@@ -5,17 +5,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import UserOperations
 
-def dashboard(request):
-    if request.user.is_authenticated:
-        # Check MongoDB for this user
-        mongodb_user = UserOperations.get_by_email(request.user.email)
-        
-        if mongodb_user:
-            return HttpResponse(f"Welcome {request.user.email}! MongoDB User ID: {mongodb_user['_id']}")
-        else:
-            return HttpResponse(f"Welcome {request.user.email}! (Not yet in MongoDB)")
-    else:
-        return HttpResponse("Please log in.")
 
 # Debug endpoint to see OAuth data
 @api_view(['GET'])
@@ -126,8 +115,8 @@ def update_user(request, user_id):
         
         result = UserOperations.update_profile(user_id, **update_data)
         if result:
-            return Response({'message': 'User updated successfully'})
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'message': ' User updated successfully'})
+        return Response({'error': ' User not found'}, status=status.HTTP_404_NOT_FOUND)
     
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
