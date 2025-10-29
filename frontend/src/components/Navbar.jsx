@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 
 const linkStyle = ({ isActive }) => ({
   textDecoration: "none",
-  padding: "0.5rem 0.75rem",
+  padding: "1.5rem 0.75rem",
   fontWeight: isActive ? 700 : 500,
 });
 

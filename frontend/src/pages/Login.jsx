@@ -40,9 +40,6 @@ export default function Login() {
           />
 
           <div className="auth-row">
-            <label className="auth-checkbox">
-              <input type="checkbox" /> <span>Remember me</span>
-            </label>
             <Link className="auth-link" to="/login">Forgot password?</Link>
           </div>
 
