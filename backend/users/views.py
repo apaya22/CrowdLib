@@ -1,6 +1,7 @@
 # users/views.py
 from django.http import HttpResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated # Only authenticated users can access
 from rest_framework.response import Response
 from rest_framework import status
 from .models import UserOperations
@@ -40,8 +41,11 @@ def debug_oauth_data(request):
 # API ENDPOINTS:
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def user_list(request):
     """Get all users"""
+    # if not request.user.is_staff:
+    #     return Response({'error': 'Forbidden: Admins only'}, status=status.HTTP_403_FORBIDDEN)
     try:
         users = UserOperations.get_all()
         return Response(users)
@@ -100,8 +104,12 @@ def create_user(request):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['PUT'])
+@permission_classes([IsAuthenticated])
 def update_user(request, user_id):
     """Update user profile"""
+    def update_user(request, user_id):
+        if str(request.user.id) != str(user_id):
+            return Response({'error': 'You can only update your own account'}, status=status.HTTP_403_FORBIDDEN)
     try:
         data = request.data
         
@@ -122,8 +130,11 @@ def update_user(request, user_id):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
 def delete_user(request, user_id):
     """Delete a user"""
+    if str(request.user.id) != str(user_id):
+        return Response({'error': 'You can only delete your own account'}, status=status.HTTP_403_FORBIDDEN)
     try:
         success = UserOperations.delete(user_id)
         if success:
@@ -133,6 +144,7 @@ def delete_user(request, user_id):
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def current_user_profile(request):
     """Get current logged-in user's profile"""
     if request.user.is_authenticated:
