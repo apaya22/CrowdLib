@@ -1,4 +1,3 @@
-from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 from core.db_connect import get_collection
