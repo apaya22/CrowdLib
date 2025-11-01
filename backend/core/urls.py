@@ -1,12 +1,17 @@
 # core/urls.py
-
+from rest_framework.routers import DefaultRouter
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, user_list, current_user_profile
-from madlibs.views import get_all_madlibs, get_madlib_by_id,search_madlibs
+from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
+
+router = DefaultRouter()
+router.register(r'madlibs', UserFilledMadlibsViewSet, basename='madlib')
+router.register(r'templates', MadLibTemplateViewSet, basename='template')
 
 urlpatterns = [
+    path('api/', include(router.urls)),
     path('', lambda request: redirect('/auth/login/google-oauth2/')),
     path('admin/', admin.site.urls),
     path('auth/', include('social_django.urls', namespace='social')),
@@ -15,8 +20,5 @@ urlpatterns = [
     path('api/users/', user_list, name='user-list'),
     path('api/users/current/', current_user_profile, name='current-user'),
     path('dashboard/', dashboard, name='dashboard'),  
-    path('api/madlibs/', get_all_madlibs, name='get_all_madlibs'),
-    path('api/madlibs/<str:madlib_id>/', get_madlib_by_id, name='get_madlib_by_id'),
-    path('api/madlibs/search/', search_madlibs, name='search_madlibs'),
 ]
 
