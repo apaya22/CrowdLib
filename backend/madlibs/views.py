@@ -1,10 +1,10 @@
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
 from .models import MadLibTemplate, UserFilledMadlibs
-from .serializers import MadlibSerializer
+
 from bson.errors import InvalidId
 
 
@@ -300,6 +300,8 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
             ]
         }
         """
+        if not request.user.is_authenticated:
+            return Response({'error': 'Not authenticated'})
         try:
             data = request.data
             # Validate required fields
@@ -351,6 +353,8 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
 
         GET /api/madlibs/{id}/
         """
+        if not request.user.is_authenticated:
+            return Response({'error': 'Not authenticated'})
         if not pk:
             return Response(
                 {'error': 'No data provided for update'},
@@ -390,6 +394,8 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
             ]
         }
         """
+        if not request.user.is_authenticated:
+            return Response({'error': 'Not authenticated'})
         try:
             data = request.data
 
@@ -438,6 +444,8 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
 
         DELETE /api/madlibs/{id}/
         """
+        if not request.user.is_authenticated:
+            return Response({'error': 'Not authenticated'})
         if pk:
             return Response(
                 {'error': 'No data provided for update'},
@@ -475,6 +483,8 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
 
         GET /api/madlibs/by_creator/?creator_id={creator_id}
         """
+        if not request.user.is_authenticated:
+            return Response({'error': 'Not authenticated'})
         try:
             creator_id = request.query_params.get('creator_id')
 
