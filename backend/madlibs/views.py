@@ -1,8 +1,7 @@
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.views import APIView
 from .models import MadLibTemplate, UserFilledMadlibs
 
 from bson.errors import InvalidId
@@ -20,6 +19,25 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
     - DELETE /api/templates/{id}/ : Delete a template
     - GET /api/templates/search/ : Search templates by title
     """
+    def get_permissions(self):
+        """
+        permission dictionary. Automatically called by rest_framework.permssions
+        """
+        permission_classes = {
+            'list': [permissions.AllowAny],
+            'create': [permissions.IsAdminUser],
+            'retrieve': [permissions.AllowAny],
+            'update': [permissions.IsAdminUser],
+            'destroy': [permissions.IsAdminUser],
+            'search' : [permissions.AllowAny],
+            'admin_stats': [permissions.IsAdminUser],
+        }
+
+        return [
+            permission()
+            for permission in permission_classes.get(self.action, [permissions.IsAdminUser])
+        ]
+
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -271,6 +289,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+            
 class UserFilledMadlibsViewSet(viewsets.ViewSet):
     """
     API endpoints for managing user-filled madlibs.
@@ -285,6 +304,26 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.madlibs_service = UserFilledMadlibs()
+        
+    def get_permissions(self):
+        """
+        permission dictionary. Automatically called by rest_framework.permssions
+        """
+        permission_classes = {
+            'list': [permissions.AllowAny],
+            'create': [permissions.IsAuthenticated],
+            'retrieve': [permissions.AllowAny],
+            'update': [permissions.IsAuthenticated],
+            'destroy': [permissions.IsAuthenticated],
+            'profile': [permissions.IsAuthenticated],
+            'admin_stats': [permissions.IsAdminUser],
+        }
+
+        return [
+            permission()
+            for permission in permission_classes.get(self.action, [permissions.IsAdminUser])
+        ]
+
 
     def create(self, request):
         """
