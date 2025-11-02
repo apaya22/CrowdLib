@@ -23,8 +23,8 @@ export default function App() {
           <NavLink to="/" style={linkStyle} end>Home</NavLink>
           <NavLink to="/explore" style={linkStyle}>Explore</NavLink>
           <NavLink to="/create" style={linkStyle}>Create</NavLink>
+          <NavLink to="/profile" style={linkStyle}>Profile</NavLink>
           <NavLink to="/login" style={linkStyle}>Login</NavLink>
-          <NavLink to="/signup" style={linkStyle}>Sign Up</NavLink>
         </div>
       </nav>
 
@@ -33,7 +33,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="explore" element={<Explore />} />
           <Route path="create" element={<Create />} />
-          <Route path="profile/:username" element={<Profile />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
           <Route path="madlibs/:id" element={<MadlibPlay />} />
