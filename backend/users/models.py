@@ -1,12 +1,15 @@
 from core.db_connect import get_collection
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
+from bson.errors import InvalidId
 
 
-#Database User Operation Model
 class UserOperations:
-    @staticmethod
-    def create(username, email, oauth_provider, oauth_id, profile_picture=None, bio=None) -> str:
+    def __init__(self):
+        self.collection = get_collection('users')
+
+    def create(self, username: str, email: str, oauth_provider: str, oauth_id: str, 
+               profile_picture = None, bio = None) -> str:
         """
         Create a new user
 
@@ -17,20 +20,19 @@ class UserOperations:
             oauth_id: OAuth ID from the provider
             profile_picture: Optional S3 URL
             bio: Optional user bio
-            public: bool
-            banned: bool
 
         Returns:
             str: User ID (ObjectId as string)
-        """
-        users_collection = get_collection('users')
 
+        Raises:
+            ValueError: If username or email already exists
+        """
         # Check if user already exists
-        if users_collection.find_one({'$or': [{'username': username}, {'email': email}]}):
+        if self.collection.find_one({'$or': [{'username': username}, {'email': email}]}):
             raise ValueError("Username or email already exists")
 
         now = datetime.now(timezone.utc)
-        
+
         user_data = {
             'username': username,
             'email': email,
@@ -46,45 +48,66 @@ class UserOperations:
             'following_count': 0
         }
 
-        result = users_collection.insert_one(user_data)
+        result = self.collection.insert_one(user_data)
         return str(result.inserted_id)
-    
 
-    @staticmethod
-    def get_by_id(user_id):
-        """Get user by ObjectId"""
-        users_collection = get_collection('users')
-        user = users_collection.find_one({'_id': ObjectId(user_id)})
+    def get_by_id(self, user_id: str):
+        """
+        Get user by ObjectId
 
-        if user:
-            user['_id'] = str(user['_id'])
+        Args:
+            user_id: User ObjectId as string
 
-        return user
+        Returns:
+            Dictionary containing user data or None if not found
+        """
+        try:
+            user = self.collection.find_one({'_id': ObjectId(user_id)})
+            if user:
+                user['_id'] = str(user['_id'])
+            return user
+        except InvalidId:
+            return None
 
-    @staticmethod
-    def get_by_username(username):
-        """Get user by username"""
-        users_collection = get_collection('users')
-        user = users_collection.find_one({'username': username})
+    def get_by_username(self, username: str):
+        """
+        Get user by username
 
-        if user:
-            user['_id'] = str(user['_id'])
+        Args:
+            username: Username to search for
 
-        return user
+        Returns:
+            Dictionary containing user data or None if not found
+        """
+        try:
+            user = self.collection.find_one({'username': username})
+            if user:
+                user['_id'] = str(user['_id'])
+            return user
+        except Exception as e:
+            print(f"Error retrieving user by username: {e}")
+            return None
 
+    def get_by_email(self, email: str):
+        """
+        Get user by email
 
-    @staticmethod
-    def get_by_email(email):
-        """Get user by email"""
-        users_collection = get_collection('users')
-        user = users_collection.find_one({'email': email})
+        Args:
+            email: Email to search for
 
-        if user: user['_id'] = str(user['_id'])
+        Returns:
+            Dictionary containing user data or None if not found
+        """
+        try:
+            user = self.collection.find_one({'email': email})
+            if user:
+                user['_id'] = str(user['_id'])
+            return user
+        except Exception as e:
+            print(f"Error retrieving user by email: {e}")
+            return None
 
-        return user
-
-    @staticmethod
-    def update_profile(user_id, **kwargs):
+    def update_profile(self, user_id: str, **kwargs) -> bool:
         """
         Update user profile information
 
@@ -93,25 +116,31 @@ class UserOperations:
             **kwargs: Fields to update (bio, profile_picture, username, email)
 
         Returns:
-            bool: True if update was successful
+            bool: True if update was successful, False otherwise
         """
-        users_collection = get_collection('users')
+        try:
+            # Fields that can be updated
+            allowed_fields = {'bio', 'profile_picture', 'username', 'email'}
+            update_data = {key: value for key, value in kwargs.items() if key in allowed_fields}
 
-        # Fields that can be updated
-        allowed_fields = {'bio', 'profile_picture', 'username', 'email'}
-        update_data = {key: value for key, value in kwargs.items() if key in allowed_fields}
+            if not update_data:
+                return False
 
-        # Always update the updated_at timestamp
-        update_data['updated_at'] = datetime.now(timezone.utc)
+            # Always update the updated_at timestamp
+            update_data['updated_at'] = datetime.now(timezone.utc)
 
-        result = users_collection.update_one(
-            {'_id': ObjectId(user_id)},
-            {'$set': update_data}
-        )
-        return result
+            result = self.collection.update_one(
+                {'_id': ObjectId(user_id)},
+                {'$set': update_data}
+            )
+            return result.modified_count > 0
+        except InvalidId:
+            return False
+        except Exception as e:
+            print(f"Error updating user profile: {e}")
+            return False
 
-    @staticmethod
-    def delete(user_id):
+    def delete(self, user_id: str) -> bool:
         """
         Delete a user
 
@@ -119,46 +148,49 @@ class UserOperations:
             user_id: User ObjectId as string
 
         Returns:
-            bool: True if deletion was successful
+            bool: True if deletion was successful, False otherwise
         """
-        users_collection = get_collection('users')
-        result = users_collection.delete_one({'_id': ObjectId(user_id)})
-        return result.deleted_count > 0
+        try:
+            result = self.collection.delete_one({'_id': ObjectId(user_id)})
+            return result.deleted_count > 0
+        except InvalidId:
+            return False
+        except Exception as e:
+            print(f"Error deleting user: {e}")
+            return False
 
-    @staticmethod
-    def _try_delete_user(username):
+    def delete_by_username(self, username: str) -> bool:
         """
-        For testing
-        Delete a user if they exist, otherwise returns None
-        
+        Delete a user by username (for testing)
+
         Args:
-            user_id: User ObjectId as string
+            username: Username of user to delete
 
         Returns:
-            bool/None: 
-                    True if user exists and deletion was successful
-                    
-                    False if user exists but the deletion failed
-                    
-                    None if the user does not exist
+            bool: True if user existed and was deleted, False otherwise
         """
-        users_collection = get_collection('users')
         try:
-            result = users_collection.delete_one({'username': username})
-        except:
-            return None
-        return result.deleted_count > 0
-        
-    @staticmethod
-    def get_all():
-        """Get all users (max 100)"""
-        users_collection = get_collection('users')
-        users = list(users_collection.find().limit(100))
+            result = self.collection.delete_one({'username': username})
+            return result.deleted_count > 0
+        except Exception as e:
+            print(f"Error deleting user by username: {e}")
+            return False
 
-        for user in users:
-            user['_id'] = str(user['_id'])
+    def get_all(self, limit: int = 100) -> list:
+        """
+        Get all users
 
-        return users
+        Args:
+            limit: Maximum number of users to retrieve (default: 100)
 
-
-
+        Returns:
+            List of users
+        """
+        try:
+            users = list(self.collection.find().limit(limit))
+            for user in users:
+                user['_id'] = str(user['_id'])
+            return users
+        except Exception as e:
+            print(f"Error retrieving all users: {e}")
+            return []
