@@ -3,12 +3,13 @@ from rest_framework.routers import DefaultRouter
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
-from users.views import dashboard, debug_oauth_data, user_list, current_user_profile
+from users.views import dashboard, debug_oauth_data, UserViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
 
 router = DefaultRouter()
 router.register(r'madlibs', UserFilledMadlibsViewSet, basename='madlib')
 router.register(r'templates', MadLibTemplateViewSet, basename='template')
+router.register(r'users', UserViewSet, basename='user')
 
 urlpatterns = [
     path('api/', include(router.urls)),
@@ -17,8 +18,5 @@ urlpatterns = [
     path('auth/', include('social_django.urls', namespace='social')),
     path('dashboard/', dashboard, name='dashboard'),
     path('api/debug/oauth/', debug_oauth_data, name='debug-oauth'),
-    path('api/users/', user_list, name='user-list'),
-    path('api/users/current/', current_user_profile, name='current-user'),
-    path('dashboard/', dashboard, name='dashboard'),  
 ]
 
