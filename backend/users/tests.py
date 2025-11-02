@@ -4,8 +4,8 @@ from users.models import UserOperations
 class UserOperationsTest(TestCase):
     def test_create_user(self):
         """Test creating a new user with OAuth"""
-        UserOperations._try_delete_user('john_doe')
-        user_id = UserOperations.create(
+        user_operator = UserOperations()
+        user_id = user_operator.create(
             username='john_doe',
             email='john@example.com',
             oauth_provider='google',
@@ -13,7 +13,7 @@ class UserOperationsTest(TestCase):
             bio='Software developer'
         )
         self.assertIsNotNone(user_id)
-        user_check = UserOperations.get_by_id(user_id)
+        user_check = user_operator.get_by_id(user_id)
         self.assertIsNotNone(user_check)
         self.assertEqual(user_check['email'],"john@example.com") # pyright: ignore[reportOptionalSubscript]
         self.assertEqual(user_check['username'],"john_doe")      # pyright: ignore[reportOptionalSubscript]
@@ -24,9 +24,8 @@ class UserOperationsTest(TestCase):
 
 
     def test_update_profile(self):
-        
-        UserOperations._try_delete_user("bob_smith")
-        user_id = UserOperations.create(
+        user_operator = UserOperations()
+        user_id = user_operator.create(
             username='bob_smith',
             email='bob@example.com',
             oauth_provider='google',
@@ -34,14 +33,14 @@ class UserOperationsTest(TestCase):
         )
 
         # Update profile
-        success = UserOperations.update_profile(
+        success = user_operator.update_profile(
             user_id,
             bio='Updated bio',
             profile_picture='https://s3.example.com/bob.jpg'
         )
 
         self.assertTrue(success)
-        user = UserOperations.get_by_id(user_id)
+        user = user_operator.get_by_id(user_id)
         
         self.assertIsNotNone(user)
         self.assertEqual(user['bio'], 'Updated bio') # pyright: ignore[reportOptionalSubscript]
@@ -50,8 +49,8 @@ class UserOperationsTest(TestCase):
         
     def test_delete_user(self):
         """Test deleting a user"""
-        UserOperations._try_delete_user('temp_user')
-        user_id = UserOperations.create(
+        user_operator = UserOperations()
+        user_id = user_operator.create(
             username='temp_user',
             email='temp@example.com',
             oauth_provider='github',
@@ -59,17 +58,17 @@ class UserOperationsTest(TestCase):
         )
 
         # Delete user
-        success = UserOperations.delete(user_id)
+        success = user_operator.delete(user_id)
         self.assertTrue(success)
 
         # Verify deletion
-        user = UserOperations.get_by_id(user_id)
+        user = user_operator.get_by_id(user_id)
         self.assertIsNone(user)
 
     def test_duplicate_username(self):
         """Test that duplicate usernames are rejected"""
-        UserOperations._try_delete_user('unique_user')
-        UserOperations.create(
+        user_operator = UserOperations()
+        user_operator.create(
             username='unique_user',
             email='user1@example.com',
             oauth_provider='google',
@@ -78,7 +77,7 @@ class UserOperationsTest(TestCase):
 
         # Try to create another with same username
         with self.assertRaises(ValueError):
-            UserOperations.create(
+            user_operator.create(
                 username='unique_user',
                 email='user2@example.com',
                 oauth_provider='github',
