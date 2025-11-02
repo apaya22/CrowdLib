@@ -3,6 +3,7 @@ from .models import UserOperations
 
 def create_mongodb_user(strategy, details, backend, user=None, *args, **kwargs):
     if user and backend.name == 'google-oauth2':
+        user_operator = UserOperations()
         # Extract data from Google
         response = kwargs.get('response', {})
         
@@ -10,12 +11,12 @@ def create_mongodb_user(strategy, details, backend, user=None, *args, **kwargs):
         google_user_id = response.get('sub') 
         
         # Check if user already exists in MongoDB
-        mongodb_user = UserOperations.get_by_email(user.email)
+        mongodb_user = user_operator.get_by_email(user.email)
         
         if not mongodb_user:
             # Create user in MongoDB with the correct Google ID
             try:
-                user_id = UserOperations.create(
+                user_id = user_operator.create(
                     username=user.username,
                     email=user.email,
                     oauth_provider='google',
