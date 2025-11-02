@@ -2,6 +2,7 @@
 from .models import UserOperations
 
 def create_mongodb_user(strategy, details, backend, response, *args, **kwargs):
+    user_operator = UserOperations()
     """Create MongoDB user BEFORE Django user is created"""
     if backend.name == 'google-oauth2':
         # Get data directly from Google response
@@ -14,12 +15,12 @@ def create_mongodb_user(strategy, details, backend, response, *args, **kwargs):
         print(f"PIPELINE: Google ID: {google_user_id}")
         
         # Check if user already exists in MongoDB
-        mongodb_user = UserOperations.get_by_email(email)
+        mongodb_user = user_operator.get_by_email(email)
         
         if not mongodb_user:
             print(f"PIPELINE: Creating NEW MongoDB user: {email}")
             try:
-                user_id = UserOperations.create(
+                user_id = user_operator.create(
                     username=username,
                     email=email,
                     oauth_provider='google',
