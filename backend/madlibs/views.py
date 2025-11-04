@@ -3,8 +3,11 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from .models import MadLibTemplate, UserFilledMadlibs
+import logging
 
 from bson.errors import InvalidId
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -53,6 +56,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
         GET /api/templates/?limit=50
         """
         try:
+            logger.debug("Listing madlib templates")
             limit = request.query_params.get('limit', 100)
 
             # Validate limit is a positive integer
@@ -64,6 +68,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
                 limit = 100
 
             templates = self.template_service.get_all(limit=limit)
+            logger.info(f"Listed {len(templates)} madlib templates")
 
             return Response(
                 {'count': len(templates), 'results': templates},
@@ -71,6 +76,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
             )
 
         except Exception as e:
+            logger.error(f"Error listing madlib templates: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -101,10 +107,12 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
         """
         try:
             data = request.data
+            logger.debug(f"Creating madlib template: {data.get('title', 'N/A')}")
 
             # Validate required fields
             required_fields = ['title', 'story']
             if not all(field in data for field in required_fields):
+                logger.warning(f"Missing required fields in create request")
                 return Response(
                     {'error': f'Missing required fields: {required_fields}'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -112,6 +120,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
 
             # Ensure title is not empty
             if not data['title'].strip():
+                logger.warning("Title is empty in create request")
                 return Response(
                     {'error': 'Title cannot be empty'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -120,17 +129,20 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
             template_id = self.template_service.create(data)
 
             if not template_id:
+                logger.error("Failed to create madlib template")
                 return Response(
                     {'error': 'Failed to create template'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
+            logger.info(f"Madlib template created: {template_id}")
             return Response(
                 {'id': template_id, 'message': 'Template created successfully'},
                 status=status.HTTP_201_CREATED
             )
 
         except Exception as e:
+            logger.error(f"Error creating madlib template: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -143,27 +155,33 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
         GET /api/templates/{id}/
         """
         if not pk:
+            logger.warning("Retrieve template called without ID")
             return Response(
                 {'error': 'Missing madlib ID'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
+            logger.debug(f"Retrieving madlib template: {pk}")
             template = self.template_service.get_by_id(str(pk))
 
             if not template:
+                logger.info(f"Madlib template not found: {pk}")
                 return Response(
                     {'error': 'Template not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"Madlib template retrieved: {pk}")
             return Response(template, status=status.HTTP_200_OK)
 
         except InvalidId:
+            logger.warning(f"Invalid madlib template ID format: {pk}")
             return Response(
                 {'error': 'Invalid template ID format'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Error retrieving madlib template {pk}: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -183,8 +201,10 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
         """
         try:
             data = request.data
+            logger.debug(f"Updating madlib template: {pk}")
 
             if not data or pk:
+                logger.warning("Update template called without data or ID")
                 return Response(
                     {'error': 'No data provided for update'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -192,22 +212,26 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
             success = self.template_service.update(str(pk), data)
 
             if not success:
+                logger.info(f"Template not found or update failed: {pk}")
                 return Response(
                     {'error': 'Template not found or update failed'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"Madlib template updated: {pk}")
             return Response(
                 {'message': 'Template updated successfully'},
                 status=status.HTTP_200_OK
             )
 
         except InvalidId:
+            logger.warning(f"Invalid madlib template ID format: {pk}")
             return Response(
                 {'error': 'Invalid template ID format'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Error updating madlib template {pk}: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -220,30 +244,36 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
         DELETE /api/templates/{id}/
         """
         if not pk:
+            logger.warning("Destroy template called without ID")
             return Response(
                 {'error': 'No data provided for update'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         try:
+            logger.debug(f"Deleting madlib template: {pk}")
             success = self.template_service.delete(str(pk))
 
             if not success:
+                logger.info(f"Madlib template not found: {pk}")
                 return Response(
                     {'error': 'Template not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"Madlib template deleted: {pk}")
             return Response(
                 {'message': 'Template deleted successfully'},
                 status=status.HTTP_204_NO_CONTENT
             )
 
         except InvalidId:
+            logger.warning(f"Invalid madlib template ID format: {pk}")
             return Response(
                 {'error': 'Invalid template ID format'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Error deleting madlib template {pk}: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -265,14 +295,17 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
             title = request.query_params.get('title', '').strip()
 
             if not title:
+                logger.warning("Search templates called without title parameter")
                 return Response(
                     {'error': 'title query parameter is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
             exact = request.query_params.get('exact', 'false').lower() == 'true'
+            logger.debug(f"Searching madlib templates: title='{title}', exact={exact}")
 
             templates = self.template_service.search_by_title(title, exact=exact)
+            logger.info(f"Search found {len(templates)} madlib templates matching '{title}'")
 
             return Response(
                 {
@@ -285,6 +318,7 @@ class MadLibTemplateViewSet(viewsets.ViewSet):
             )
 
         except Exception as e:
+            logger.error(f"Error searching madlib templates: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -340,12 +374,16 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
         }
         """
         if not request.user.is_authenticated:
+            logger.warning("Unauthenticated user attempted to create filled madlib")
             return Response({'error': 'Not authenticated'})
         try:
             data = request.data
+            logger.debug(f"Creating filled madlib for user: {request.user.id}")
+
             # Validate required fields
             required_fields = ['template_id', 'creator_id', 'inputted_blanks']
             if not all(field in data for field in required_fields):
+                logger.warning("Missing required fields in create filled madlib request")
                 return Response(
                     {'error': f'Missing required fields: {required_fields}'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -353,6 +391,7 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
 
             # Validate inputted_blanks is a list
             if not isinstance(data['inputted_blanks'], list):
+                logger.warning("inputted_blanks is not a list in create filled madlib request")
                 return Response(
                     {'error': 'inputted_blanks must be a list'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -365,22 +404,26 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
             )
 
             if not madlib_id:
+                logger.error("Failed to create filled madlib")
                 return Response(
                     {'error': 'Failed to create madlib'},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
 
+            logger.info(f"Filled madlib created: {madlib_id}")
             return Response(
                 {'id': madlib_id, 'message': 'Madlib created successfully'},
                 status=status.HTTP_201_CREATED
             )
 
         except InvalidId:
+            logger.warning("Invalid template_id or creator_id format in create filled madlib")
             return Response(
                 {'error': 'Invalid template_id or creator_id format'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Error creating filled madlib: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
