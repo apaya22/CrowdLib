@@ -15,3 +15,6 @@ backend/node_modules
 *.sln
 *.sw?
 *.log
+*.pyc
+debug.log
+db.sqlite3
