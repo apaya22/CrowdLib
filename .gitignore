@@ -1,8 +1,5 @@
 .env
 .venv
-backend/core/__pycache__/
-backend/*/__pycache__/
-backend/core/migrations/__pycache__/
 backend/node_modules
 */__pycache__/*
 .vscode/*
@@ -16,5 +13,4 @@ backend/node_modules
 *.sw?
 *.log
 *.pyc
-debug.log
 db.sqlite3
