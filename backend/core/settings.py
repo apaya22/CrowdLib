@@ -4,6 +4,7 @@ import os
 
 load_dotenv()
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-%s^cc61v(u)=*_owba2+a@hnfnxa%a8vgnt26v!&0@21_*jz7w'
@@ -89,6 +90,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+SESSION_ENGINE = 'core.sessions'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Session cookie settings for OAuth
+SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cookies to be sent with OAuth redirects
+SESSION_COOKIE_HTTPONLY = True   # Prevent JavaScript access to session cookie
+SESSION_COOKIE_SECURE = False    # Set to True in production with HTTPS
+SESSION_COOKIE_AGE = 1209600     # 2 weeks in seconds
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'

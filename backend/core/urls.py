@@ -7,6 +7,7 @@ from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, UserViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
 from django.conf import settings
+
 router = DefaultRouter()
 router.register(r'madlibs', UserFilledMadlibsViewSet, basename='madlib')
 router.register(r'templates', MadLibTemplateViewSet, basename='template')
