@@ -292,3 +292,9 @@
 .template-result--active { border-color: #646cff; background: #eef0ff; }
 .template-title { font-weight: 600; margin-bottom: 0.25rem; }
 .template-tags { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+
+/* Explore page */
+.searchbar {
+  display: flex; gap: .5rem; margin: .25rem 0 1rem;
+}
+.searchbar-input { flex: 1; }
