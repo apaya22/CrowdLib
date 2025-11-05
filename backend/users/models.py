@@ -32,6 +32,9 @@ class UserOperations:
         """
         logger.debug(f"Creating new user: username={username}, email={email}, provider={oauth_provider}")
 
+        Raises:
+            ValueError: If username or email already exists
+        """
         # Check if user already exists
         if self.collection.find_one({'$or': [{'username': username}, {'email': email}]}):
             logger.warning(f"User creation failed - username or email already exists: {username}, {email}")

@@ -10,6 +10,9 @@ from bson.errors import InvalidId
 logger = logging.getLogger(__name__)
 
 
+class MadLibTemplateViewSet(viewsets.ViewSet):
+    """
+    API endpoints for managing madlib templates.
 
 class MadLibTemplateViewSet(viewsets.ViewSet):
     """

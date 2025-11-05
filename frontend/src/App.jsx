@@ -1,10 +1,12 @@
 import { Routes, Route, NavLink } from "react-router-dom";
+import OAuthCompleteSignup from "./pages/OAuthCompleteSignup";
 import Home from "./pages/Home.jsx";
 import Explore from "./pages/Explore.jsx";
 import Create from "./pages/Create.jsx";
 import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
+import MadlibPlay from "./pages/MadlibPlay.jsx";
 import "./App.css";
 
 const linkStyle = ({ isActive }) => ({
@@ -35,6 +37,8 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="login" element={<Login />} />
           <Route path="signup" element={<Signup />} />
+          <Route path="madlibs/:id" element={<MadlibPlay />} />
+          <Route path="/oauth-complete-signup" element={<OAuthCompleteSignup />} />
         </Routes>
       </main>
     </div>
