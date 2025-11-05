@@ -14,3 +14,5 @@ backend/node_modules
 *.log
 *.pyc
 db.sqlite3
+diagrams/
+.*.py
