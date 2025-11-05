@@ -13,6 +13,6 @@ backend/node_modules
 *.sw?
 *.log
 *.pyc
-db.sqlite3
+*/db.sqlite3
 diagrams/
 .*.py
