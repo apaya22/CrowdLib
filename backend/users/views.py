@@ -1,15 +1,27 @@
 # users/views.py
 from django.http import HttpResponse
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated # Only authenticated users can access
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, permissions, viewsets
 from .models import UserOperations
 
+def dashboard(request):
+    if request.user.is_authenticated:
+        # Check MongoDB for this user
+        user_operator = UserOperations()
+        mongodb_user = user_operator.get_by_email(request.user.email)
+        
+        if mongodb_user:
+            return HttpResponse(f"Welcome {request.user.email}! MongoDB User ID: {mongodb_user['_id']}")
+        else:
+            return HttpResponse(f"Welcome {request.user.email}! (Not yet in MongoDB)")
+    else:
+        return HttpResponse("Please log in.")
 
 # Debug endpoint to see OAuth data
 @api_view(['GET'])
 def debug_oauth_data(request):
+    user_operator = UserOperations()
     if request.user.is_authenticated:
         user_data = {
             'django_user': {
@@ -33,126 +45,335 @@ def debug_oauth_data(request):
             })
         
         # Get MongoDB user data
-        user_data['mongodb_user'] = UserOperations.get_by_email(request.user.email)
+        user_data['mongodb_user'] = user_operator.get_by_email(request.user.email)
             
         return Response(user_data)
     return Response({'error': 'Not authenticated'})
 
 # API ENDPOINTS:
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def user_list(request):
-    """Get all users"""
-    # if not request.user.is_staff:
-    #     return Response({'error': 'Forbidden: Admins only'}, status=status.HTTP_403_FORBIDDEN)
-    try:
-        users = UserOperations.get_all()
-        return Response(users)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+class UserViewSet(viewsets.ViewSet):
+    """
+    API endpoints for managing users.
+    """
 
-@api_view(['GET'])
-def user_detail(request, user_id):
-    """Get specific user by ID"""
-    try:
-        user = UserOperations.get_by_id(user_id)
-        if user:
-            return Response(user)
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user_service = UserOperations()
 
-@api_view(['GET'])
-def user_by_username(request, username):
-    """Get user by username"""
-    try:
-        user = UserOperations.get_by_username(username)
-        if user:
-            return Response(user)
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['POST'])
-def create_user(request):
-    """Create a new user"""
-    try:
-        data = request.data
-        
-        # Validate required fields
-        required_fields = ['username', 'email', 'oauth_provider', 'oauth_id']
-        for field in required_fields:
-            if field not in data:
-                return Response({'error': f'Missing required field: {field}'}, 
-                              status=status.HTTP_400_BAD_REQUEST)
-        
-        user_id = UserOperations.create(
-            username=data['username'],
-            email=data['email'],
-            oauth_provider=data['oauth_provider'],
-            oauth_id=data['oauth_id'],
-            profile_picture=data.get('profile_picture'),
-            bio=data.get('bio')
-        )
-        return Response({'user_id': user_id, 'message': 'User created successfully'}, 
-                       status=status.HTTP_201_CREATED)
-    
-    except ValueError as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    def get_permissions(self):
+        """
+        permission dictionary. Automatically called by rest_framework.permssions
+        """
+        permission_classes = {
+            'list': [permissions.IsAdminUser],
+            'create': [permissions.AllowAny],
+            'retrieve': [permissions.AllowAny],
+            'update': [permissions.IsAuthenticated],
+            'destroy': [permissions.IsAuthenticated],
+            'profile': [permissions.IsAuthenticated],
+            'admin_stats': [permissions.IsAdminUser],
+        }
 
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_user(request, user_id):
-    """Update user profile"""
-    def update_user(request, user_id):
-        if str(request.user.id) != str(user_id):
-            return Response({'error': 'You can only update your own account'}, status=status.HTTP_403_FORBIDDEN)
-    try:
-        data = request.data
-        
-        # Only allow certain fields to be updated
-        allowed_fields = {'bio', 'profile_picture', 'username', 'email'}
-        update_data = {key: value for key, value in data.items() if key in allowed_fields}
-        
-        if not update_data:
-            return Response({'error': 'No valid fields to update'}, 
-                          status=status.HTTP_400_BAD_REQUEST)
-        
-        result = UserOperations.update_profile(user_id, **update_data)
-        if result:
-            return Response({'message': ' User updated successfully'})
-        return Response({'error': ' User not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return [
+            permission()
+            for permission in permission_classes.get(self.action, [permissions.IsAdminUser])
+        ]
 
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_user(request, user_id):
-    """Delete a user"""
-    if str(request.user.id) != str(user_id):
-        return Response({'error': 'You can only delete your own account'}, status=status.HTTP_403_FORBIDDEN)
-    try:
-        success = UserOperations.delete(user_id)
-        if success:
-            return Response({'message': 'User deleted successfully'})
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def current_user_profile(request):
-    """Get current logged-in user's profile"""
-    if request.user.is_authenticated:
+    def list(self, request):
+        """
+        List all users with optional limit.
+
+        Query Parameters:
+        - limit: Maximum number of users to retrieve (default: 100)
+
+        GET /api/users/?limit=50
+        """
         try:
-            user = UserOperations.get_by_email(request.user.email)
-            if user:
-                return Response(user)
-            return Response({'error': 'User profile not found'}, status=status.HTTP_404_NOT_FOUND)
+            limit = request.query_params.get('limit', 100)
+
+            try:
+                limit = int(limit)
+                if limit <= 0:
+                    limit = 100
+            except ValueError:
+                limit = 100
+
+            users = self.user_service.get_all()
+
+            return Response(
+                {'count': len(users), 'results': users},
+                status=status.HTTP_200_OK
+            )
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    return Response({'error': 'Not authenticated'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def create(self, request):
+        """
+        Create a new user (public endpoint).
+
+        Expected JSON:
+        {
+            "username": "john_doe",
+            "email": "john@example.com",
+            "oauth_provider": "google",
+            "oauth_id": "1234567890",
+            "profile_picture": "https://...",
+            "bio": "Hello, I'm John!"
+        }
+        """
+        try:
+            data = request.data
+
+            required_fields = ['username', 'email', 'oauth_provider', 'oauth_id']
+            if not all(field in data for field in required_fields):
+                return Response(
+                    {'error': f'Missing required fields: {required_fields}'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user_id = self.user_service.create(
+                username=data['username'],
+                email=data['email'],
+                oauth_provider=data['oauth_provider'],
+                oauth_id=data['oauth_id'],
+                profile_picture=data.get('profile_picture'),
+                bio=data.get('bio')
+            )
+
+            return Response(
+                {'user_id': user_id, 'message': 'User created successfully'},
+                status=status.HTTP_201_CREATED
+            )
+
+        except ValueError as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def retrieve(self, request, pk=None):
+        """
+        Retrieve a user by ID (public endpoint).
+
+        GET /api/users/{id}/
+        """
+        if not pk:
+            return Response(
+                {'error': 'Missing user ID'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            user = self.user_service.get_by_id(str(pk))
+
+            if not user:
+                return Response(
+                    {'error': 'User not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(user, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def update(self, request, pk=None):
+        """
+        Update a user's profile (authenticated only).
+
+        Users can only update their own profile.
+
+        Expected JSON (all fields optional):
+        {
+            "username": "new_username",
+            "email": "newemail@example.com",
+            "bio": "Updated bio",
+            "profile_picture": "https://..."
+        }
+        """
+        if not pk:
+            return Response(
+                {'error': 'Missing user ID'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if user is updating their own profile
+        target_user = self.user_service.get_by_id(str(pk))
+        if not target_user:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        current_user = self.user_service.get_by_email(request.user.email)
+        if not current_user or str(current_user['_id']) != str(pk):
+            return Response(
+                {'error': 'You can only update your own profile'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            data = request.data
+
+            if not data:
+                return Response(
+                    {'error': 'No data provided for update'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            success = self.user_service.update_profile(str(pk), **data)
+
+            if not success:
+                return Response(
+                    {'error': 'User not found or no valid fields to update'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(
+                {'message': 'User updated successfully'},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def destroy(self, request, pk=None):
+        """
+        Delete a user (authenticated only).
+
+        Users can only delete their own account.
+
+        DELETE /api/users/{id}/
+        """
+        if not pk:
+            return Response(
+                {'error': 'Missing user ID'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if user is deleting their own account
+        current_user = self.user_service.get_by_email(request.user.email)
+        if not current_user or str(current_user['_id']) != str(pk):
+            return Response(
+                {'error': 'You can only delete your own account'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            success = self.user_service.delete(str(pk))
+
+            if not success:
+                return Response(
+                    {'error': 'User not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(
+                {'message': 'User deleted successfully'},
+                status=status.HTTP_204_NO_CONTENT
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def by_username(self, request):
+        """
+        Get user by username (public endpoint).
+
+        GET /api/users/by_username/?username=john_doe
+        """
+        try:
+            username = request.query_params.get('username', '').strip()
+
+            if not username:
+                return Response(
+                    {'error': 'username query parameter is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user = self.user_service.get_by_username(username)
+
+            if not user:
+                return Response(
+                    {'error': 'User not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(user, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def by_email(self, request):
+        """
+        Get user by email (public endpoint).
+
+        GET /api/users/by_email/?email=john@example.com
+        """
+        try:
+            email = request.query_params.get('email', '').strip()
+
+            if not email:
+                return Response(
+                    {'error': 'email query parameter is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            user = self.user_service.get_by_email(email)
+
+            if not user:
+                return Response(
+                    {'error': 'User not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(user, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def profile(self, request):
+        """
+        Get current logged-in user's profile (authenticated only).
+
+        GET /api/users/profile/
+        """
+        try:
+            user = self.user_service.get_by_email(request.user.email)
+
+            if not user:
+                return Response(
+                    {'error': 'User profile not found'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            return Response(user, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

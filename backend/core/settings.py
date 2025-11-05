@@ -38,7 +38,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 REST_FRAMEWORK = {
+     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',  # Default: all endpoints require auth
+    ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50
 }
@@ -133,7 +140,41 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
     'access_type': 'offline',
 }
 
-# settings.py - ADD THIS
-SOCIAL_AUTH_GOOGLE_OAUTH2_USE_UNIQUE_USER_ID = True  # Use Google ID, not email
+
+# Added J.K
+SOCIAL_AUTH_GOOGLE_OAUTH2_USE_UNIQUE_USER_ID = True  # Use Google ID
 SOCIAL_AUTH_UNIQUE_USER_EMAIL = True  # Don't allow multiple accounts with same email
 SOCIAL_AUTH_PROTECTED_USER_FIELDS = ['email', 'username']
+
+
+
+#added 4:29 pm 11/1 JK
+# Allow dev hosts
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
+# CORS for the Vite dev server
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True  # allow cookies over CORS
+
+# CSRF trust so SessionAuthentication + cookies work from 5173
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Social-auth: allow redirecting back to the FRONTEND after Google
+SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = ["localhost:5173", "127.0.0.1:5173"]
+
+
+# added 5:08 pm 11/1
+
+SESSION_COOKIE_DOMAIN = "localhost"
+
+SESSION_COOKIE_SAMESITE = "None"
+CSRF_COOKIE_SAMESITE = "None"
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
