@@ -1,0 +1,16 @@
+.env
+.venv
+backend/node_modules
+*/__pycache__/*
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.log
+*.pyc
+db.sqlite3
