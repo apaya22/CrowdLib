@@ -1,32 +1,12 @@
-import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
-/** Demo templates (replace with API later) */
-const DEMO_TEMPLATES = [
-  {
-    id: "funny-day",
-    title: "A Funny Day",
-    content:
-      "Today I saw a very [ADJ] [ANIMAL] at the [NOUN]. It decided to [VERB] while everyone shouted, “What a [ADJ] idea!”",
-    tags: ["funny", "animals"],
-  },
-  {
-    id: "space-pirates",
-    title: "Space Pirates",
-    content:
-      "Our spaceship runs on [NOUN] and the captain loves to [VERB] whenever we approach a [ADJ] planet full of [PLURAL NOUN].",
-    tags: ["scifi"],
-  },
-  {
-    id: "grandmas-secret",
-    title: "Grandma’s Secret",
-    content:
-      "Grandma’s secret [NOUN] recipe is incredibly [ADJ]. First you [VERB] the [NOUN], then sprinkle with [PLURAL NOUN] and serve.",
-    tags: ["family", "food"],
-  },
-];
+/* placefholder for when oauth workds */
+//import { useAuth } from "../pages/Signup.jsx";
 
-/** Extract ordered blanks like [NOUN], [VERB], [ADJ]... */
+const useAuth = () => ({ user: null });
+
+// search for placeholders: [NOUN] in text 
 function extractBlanks(text) {
   if (!text) return [];
   const regex = /\[([^\]]+)\]/g;
@@ -41,6 +21,7 @@ function extractBlanks(text) {
   return blanks;
 }
 
+// fill with user's choices
 function fillTemplate(text, values) {
   if (!text) return "";
   let i = 0;
@@ -51,29 +32,37 @@ function fillTemplate(text, values) {
   });
 }
 
+// for when they need to post (Needs work)
+function getCookie(name) {
+  const m = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+  return m ? m.pop() : "";
+}
+
+/* Play & Create */
 export default function Create() {
-  const [mode, setMode] = useState("create");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mode, setMode] = useState("fill");
 
-  // CREATE TEMPLATE state
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  // API base
+  const API_ROOT =
+    (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+  
+  // search box
+  const [input, setInput] = useState("");
+  const [query, setQuery] = useState("");
+  const [templates, setTemplates] = useState([]);
 
-  // FILL EXISTING state
-  const [searchQuery, setSearchQuery] = useState("");
-  const filteredTemplates = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return DEMO_TEMPLATES;
-    return DEMO_TEMPLATES.filter(
-      (t) =>
-        t.title.toLowerCase().includes(q) ||
-        (t.tags || []).some((tag) => tag.toLowerCase().includes(q))
-    );
-  }, [searchQuery]);
+  // handle errors
+  const [tplLoading, setTplLoading] = useState(true);
+  const [tplError, setTplError] = useState(null);
 
-  const [selectedId, setSelectedId] = useState(DEMO_TEMPLATES[0].id);
+  // store typed words
+  const [selectedId, setSelectedId] = useState(null);
   const selectedTemplate = useMemo(
-    () => DEMO_TEMPLATES.find((t) => t.id === selectedId),
-    [selectedId]
+    () => templates.find(t => (t.id ?? t._id) === selectedId),
+    [selectedId, templates]
   );
   const blanks = useMemo(
     () => extractBlanks(selectedTemplate?.content || ""),
@@ -83,29 +72,109 @@ export default function Create() {
   const safeFillValues = useMemo(() => {
     const arr = [...fillValues];
     arr.length = blanks.length;
-    return arr.map((v) => v || "");
+    return arr.map(v => v || "");
   }, [blanks.length, fillValues]);
 
   function handleFillChange(i, val) {
-    setFillValues((prev) => {
+    setFillValues(prev => {
       const copy = [...prev];
       copy[i] = val;
       return copy;
     });
   }
 
-  function onSubmitCreate(e) {
-    e.preventDefault(); // template only
-  }
-  function onSubmitFill(e) {
-    e.preventDefault(); // template only
-  }
-
+  // show preview text
   const filledPreview = useMemo(
     () => fillTemplate(selectedTemplate?.content || "", safeFillValues),
     [selectedTemplate, safeFillValues]
   );
 
+  // get templates from server
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        setTplLoading(true);
+        setTplError(null);
+        const url = new URL(`${API_ROOT}/templates/`);
+        if (query) url.searchParams.set("search", query); // does drf seach filter work?
+        const res = await fetch(url.toString(), {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status} :: ${t.slice(0,160)}`);
+        }
+        const data = await res.json();
+        if (!mounted) return;
+        const items = Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+        setTemplates(items);
+        // choose first as selected
+        if (!selectedId && items.length > 0) {
+          setSelectedId(items[0].id ?? items[0]._id);
+          setFillValues([]); // reset fills
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setTplError(e.message || "Failed to load templates");
+      } finally {
+        if (mounted) setTplLoading(false);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [query, API_ROOT]);
+
+  // Create template
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
+  async function requireAuthOrRedirect() { // must be logged in
+    if (user) return true;
+    navigate("/login", { replace: true, state: { from: location } });
+    return false;
+  }
+
+  async function onSubmitCreate(e) {
+    e.preventDefault();
+    if (!(await requireAuthOrRedirect())) return;
+
+    try {
+      const csrftoken = getCookie("csrftoken");
+      const res = await fetch(`${API_ROOT}/templates/`, {
+        method: "POST",
+        credentials: "include", // send session cookie
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrftoken || "",
+        },
+        body: JSON.stringify({ title, content, tags: [] }),
+      });
+      if (!res.ok) {
+        const t = await res.text().catch(() => "");
+        throw new Error(`HTTP ${res.status} :: ${t.slice(0,200)}`);
+      }
+      // success -> refresh list and switch to "fill" so they can play it
+      setTitle("");
+      setContent("");
+      setMode("fill");
+      // trigger a re-search to include the new template
+      setInput(title);
+      setQuery(title);
+    } catch (err) {
+      alert(err.message || "Failed to create template");
+    }
+  }
+
+  function onSubmitFill(e) { // Needs work for posting and AI image generation
+    e.preventDefault();
+  }
+
+  function onSearchSubmit(e) {
+    e.preventDefault();
+    setQuery(input.trim());
+  }
+
+  // html layout
   return (
     <div className="create container">
       <div className="create-head">
@@ -113,102 +182,77 @@ export default function Create() {
         <div className="tabs">
           <button
             type="button"
-            className={`tab ${mode === "create" ? "tab--active" : ""}`}
-            onClick={() => setMode("create")}
-          >
-            Create a Template
-          </button>
-          <button
-            type="button"
             className={`tab ${mode === "fill" ? "tab--active" : ""}`}
             onClick={() => setMode("fill")}
           >
             Play a Madlib
           </button>
+          <button
+            type="button"
+            className={`tab ${mode === "create" ? "tab--active" : ""}`}
+            onClick={() => setMode("create")}
+          >
+            Create a Template
+          </button>
         </div>
       </div>
 
-      {/* CREATE A TEMPLATE */}
-      {mode === "create" && (
-        <form className="card create-form" onSubmit={onSubmitCreate} noValidate>
-          <div className="form-row">
-            <label className="form-label" htmlFor="title">Title</label>
-            <input
-              id="title"
-              className="form-input"
-              type="text"
-              placeholder="e.g., The [ADJ] Adventure"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
-
-          <div className="form-row">
-            <label className="form-label" htmlFor="content">
-              Story (use blanks like [NOUN], [VERB], [ADJ], [PLURAL NOUN]…)
-            </label>
-            <textarea
-              id="content"
-              className="form-textarea"
-              rows={10}
-              placeholder={`Today I saw a [ADJ] [ANIMAL] who loved to [VERB] at the [NOUN]...`}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-            <small className="form-hint">
-              Use brackets <code>[ ]</code> to mark blanks (e.g., <code>[NOUN]</code>).
-            </small>
-          </div>
-
-          <div className="create-actions">
-            <div className="action-buttons">
-              <button className="btn btn--primary" type="submit" disabled title="Placeholder">
-                Publish Template
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
-      {/* FILL EXISTING TEMPLATE */}
+      {/* PLAY */}
       {mode === "fill" && (
         <form className="card create-form" onSubmit={onSubmitFill} noValidate>
+          {/* Search templates */}
           <div className="form-row">
             <label className="form-label" htmlFor="templateSearch">Search for a Story</label>
-            <input
-              id="templateSearch"
-              className="form-input"
-              type="text"
-              placeholder="Search stories by title or tag…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <form onSubmit={onSearchSubmit} style={{ display: "flex", gap: ".5rem" }}>
+              <input
+                id="templateSearch"
+                className="form-input"
+                type="text"
+                placeholder="Search stories by title…"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <button className="btn" type="submit">Search</button>
+            </form>
 
-            <div className="template-results">
-              {filteredTemplates.length > 0 ? (
-                filteredTemplates.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={`template-result ${selectedId === t.id ? "template-result--active" : ""}`}
-                    onClick={() => { setSelectedId(t.id); setFillValues([]); }}
-                  >
-                    <div className="template-title">{t.title}</div>
-                    {t.tags?.length > 0 && (
-                      <div className="template-tags">
-                        {t.tags.map((tag) => (
-                          <span key={tag} className="tag">#{tag}</span>
-                        ))}
-                      </div>
-                    )}
-                  </button>
-                ))
-              ) : (
-                <p className="muted" style={{ marginTop: ".5rem" }}>No templates found.</p>
+            {/* Results list */}
+            <div className="template-results" style={{ marginTop: ".5rem" }}>
+              {tplLoading && <p className="muted">Loading…</p>}
+              {tplError && (
+                <div className="explore-state explore-state--error">
+                  <p>Couldn’t load templates.</p>
+                  <code>{tplError}</code>
+                </div>
+              )}
+              {!tplLoading && !tplError && templates.length === 0 && (
+                <p className="muted">No templates found.</p>
+              )}
+              {!tplLoading && !tplError && templates.length > 0 && (
+                templates.map((t) => {
+                  const tid = t.id ?? t._id;
+                  return (
+                    <button
+                      key={tid}
+                      type="button"
+                      className={`template-result ${selectedId === tid ? "template-result--active" : ""}`}
+                      onClick={() => { setSelectedId(tid); setFillValues([]); }}
+                    >
+                      <div className="template-title">{t.title || "Untitled"}</div>
+                      {Array.isArray(t.tags) && t.tags.length > 0 && (
+                        <div className="template-tags">
+                          {t.tags.map((tag) => (
+                            <span key={tag} className="tag">#{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </button>
+                  );
+                })
               )}
             </div>
           </div>
 
+          {/* Dynamic blanks */}
           {blanks.length > 0 ? (
             <div className="blanks-grid">
               {blanks.map((b, i) => (
@@ -228,10 +272,11 @@ export default function Create() {
             </div>
           ) : (
             <div className="explore-state">
-              <p>No blanks detected in this template.</p>
+              <p>Select a template to play.</p>
             </div>
           )}
-
+          
+          {/* Preview only (AI not implemented yet) check if POST works in backend */}
           <div className="create-actions">
             <div className="create-preview card">
               <div className="img-placeholder img-placeholder--wide" aria-hidden>
@@ -246,11 +291,55 @@ export default function Create() {
                 </p>
               </div>
             </div>
-
             <div className="action-buttons">
+              {}
               <Link className="btn" to="/login" title="Requires auth (placeholder)">Generate AI</Link>
-              <button className="btn btn--primary" type="submit" disabled title="Placeholder">
-                Publish Filled Story
+              <Link className="btn btn--primary" to="/login" title="Requires auth (placeholder)">
+                Post
+              </Link>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* CREATE A NEW TEMPLATE (requires login) */}
+      {mode === "create" && (
+        <form className="card create-form" onSubmit={onSubmitCreate} noValidate>
+          <div className="form-row">
+            <label className="form-label" htmlFor="title">Title</label>
+            <input
+              id="title"
+              className="form-input"
+              type="text"
+              placeholder="e.g., The [ADJ] Adventure"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="form-row">
+            <label className="form-label" htmlFor="content">
+              Story (use blanks like [NOUN], [VERB], [ADJ], [PLURAL NOUN]…)
+            </label>
+            <textarea
+              id="content"
+              className="form-textarea"
+              rows={10}
+              placeholder={`Today I saw a [ADJ] [ANIMAL] who loved to [VERB] at the [NOUN]...`}
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+            />
+            <small className="form-hint">
+              Use brackets <code>[ ]</code> to mark blanks (e.g., <code>[NOUN]</code>).
+            </small>
+          </div>
+
+          <div className="create-actions">
+            <div className="action-buttons">
+              <button className="btn btn--primary" type="submit">
+                Publish Template
               </button>
             </div>
           </div>
