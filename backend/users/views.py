@@ -4,24 +4,33 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework import status, permissions, viewsets
 from .models import UserOperations
+import logging
+
+logger = logging.getLogger(__name__)
 
 def dashboard(request):
+    logger.debug(f"Dashboard accessed by user: {request.user.email if request.user.is_authenticated else 'Anonymous'}")
     if request.user.is_authenticated:
         # Check MongoDB for this user
         user_operator = UserOperations()
         mongodb_user = user_operator.get_by_email(request.user.email)
-        
+
         if mongodb_user:
+            logger.info(f"Dashboard loaded for authenticated user: {request.user.email}")
             return HttpResponse(f"Welcome {request.user.email}! MongoDB User ID: {mongodb_user['_id']}")
         else:
+            logger.info(f"User authenticated but not in MongoDB: {request.user.email}")
             return HttpResponse(f"Welcome {request.user.email}! (Not yet in MongoDB)")
     else:
+        logger.debug("Dashboard accessed by anonymous user")
         return HttpResponse("Please log in.")
 
 # Debug endpoint to see OAuth data
 @api_view(['GET'])
 def debug_oauth_data(request):
     user_operator = UserOperations()
+    logger.debug(f"Debug OAuth data requested by user: {request.user.email if request.user.is_authenticated else 'Anonymous'}")
+
     if request.user.is_authenticated:
         user_data = {
             'django_user': {
@@ -34,7 +43,7 @@ def debug_oauth_data(request):
             'social_auth': [],
             'mongodb_user': None
         }
-        
+
         # Get Google OAuth data
         social_accounts = request.user.social_auth.all()
         for social in social_accounts:
@@ -43,11 +52,14 @@ def debug_oauth_data(request):
                 'uid': social.uid,
                 'extra_data': social.extra_data
             })
-        
+            logger.info(f"OAuth data retrieved for user {request.user.email}: {social.provider}")
+
         # Get MongoDB user data
         user_data['mongodb_user'] = user_operator.get_by_email(request.user.email)
-            
+        logger.info(f"Debug OAuth data returned for user: {request.user.email}")
+
         return Response(user_data)
+    logger.warning("Debug OAuth data requested by unauthenticated user")
     return Response({'error': 'Not authenticated'})
 
 # API ENDPOINTS:
@@ -92,6 +104,7 @@ class UserViewSet(viewsets.ViewSet):
         GET /api/users/?limit=50
         """
         try:
+            logger.debug("Listing users")
             limit = request.query_params.get('limit', 100)
 
             try:
@@ -102,12 +115,14 @@ class UserViewSet(viewsets.ViewSet):
                 limit = 100
 
             users = self.user_service.get_all()
+            logger.info(f"Listed {len(users)} users")
 
             return Response(
                 {'count': len(users), 'results': users},
                 status=status.HTTP_200_OK
             )
         except Exception as e:
+            logger.error(f"Error listing users: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -129,9 +144,11 @@ class UserViewSet(viewsets.ViewSet):
         """
         try:
             data = request.data
+            logger.debug(f"Creating user: username={data.get('username')}, email={data.get('email')}")
 
             required_fields = ['username', 'email', 'oauth_provider', 'oauth_id']
             if not all(field in data for field in required_fields):
+                logger.warning("Missing required fields in user creation request")
                 return Response(
                     {'error': f'Missing required fields: {required_fields}'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -146,17 +163,20 @@ class UserViewSet(viewsets.ViewSet):
                 bio=data.get('bio')
             )
 
+            logger.info(f"User created: {user_id}")
             return Response(
                 {'user_id': user_id, 'message': 'User created successfully'},
                 status=status.HTTP_201_CREATED
             )
 
         except ValueError as e:
+            logger.warning(f"User creation validation error: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
+            logger.error(f"Error creating user: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -169,22 +189,27 @@ class UserViewSet(viewsets.ViewSet):
         GET /api/users/{id}/
         """
         if not pk:
+            logger.warning("Retrieve user called without ID")
             return Response(
                 {'error': 'Missing user ID'},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
         try:
+            logger.debug(f"Retrieving user: {pk}")
             user = self.user_service.get_by_id(str(pk))
 
             if not user:
+                logger.info(f"User not found: {pk}")
                 return Response(
                     {'error': 'User not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"User retrieved: {pk}")
             return Response(user, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error retrieving user {pk}: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -304,21 +329,26 @@ class UserViewSet(viewsets.ViewSet):
             username = request.query_params.get('username', '').strip()
 
             if not username:
+                logger.warning("Get user by username called without username parameter")
                 return Response(
                     {'error': 'username query parameter is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            logger.debug(f"Retrieving user by username: {username}")
             user = self.user_service.get_by_username(username)
 
             if not user:
+                logger.info(f"User not found by username: {username}")
                 return Response(
                     {'error': 'User not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"User retrieved by username: {username}")
             return Response(user, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error retrieving user by username: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -335,21 +365,26 @@ class UserViewSet(viewsets.ViewSet):
             email = request.query_params.get('email', '').strip()
 
             if not email:
+                logger.warning("Get user by email called without email parameter")
                 return Response(
                     {'error': 'email query parameter is required'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            logger.debug(f"Retrieving user by email: {email}")
             user = self.user_service.get_by_email(email)
 
             if not user:
+                logger.info(f"User not found by email: {email}")
                 return Response(
                     {'error': 'User not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"User retrieved by email: {email}")
             return Response(user, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error retrieving user by email: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -363,16 +398,20 @@ class UserViewSet(viewsets.ViewSet):
         GET /api/users/profile/
         """
         try:
+            logger.debug(f"Getting profile for user: {request.user.email}")
             user = self.user_service.get_by_email(request.user.email)
 
             if not user:
+                logger.warning(f"User profile not found for email: {request.user.email}")
                 return Response(
                     {'error': 'User profile not found'},
                     status=status.HTTP_404_NOT_FOUND
                 )
 
+            logger.info(f"Profile retrieved for user: {request.user.email}")
             return Response(user, status=status.HTTP_200_OK)
         except Exception as e:
+            logger.error(f"Error retrieving user profile: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

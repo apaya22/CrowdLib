@@ -1,141 +1,146 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE?.replace(/\/$/, "") || "http://127.0.0.1:8000/api/madlibs/";
+// API Base
+const API_ROOT =
+  (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
 
 export default function Explore() {
+  // set states
   const mounted = useRef(true);
-  const [madlibs, setMadlibs] = useState([]);
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
 
+  const [madlibs, setMadlibs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
 
+  const [input, setInput] = useState("");
+  const [query, setQuery] = useState("");
+  const [serverSearchOK, setServerSearchOK] = useState(true);
+
+  // get from API
+  async function fetchMadlibs(q = "") {
+    const url = new URL(`${API_ROOT}/madlibs/`);
+    if (q) url.searchParams.set("search", q);
+    const res = await fetch(url.toString(), {
+      credentials: "include",
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} :: ${txt.slice(0, 160)}`);
+    }
+    return res.json();
+  }
+
+  // load and search
   useEffect(() => {
     mounted.current = true;
-    const ctrl = new AbortController();
-
-    async function run() {
+    (async () => {
       try {
-        if (page === 1) {
-          setLoading(true);
-          setError(null);
-        } else {
-          setLoadingMore(true);
-        }
-
-        const res = await fetch(`${API_BASE}/madlibs/?page=${page}&limit=12`, {
-          signal: ctrl.signal,
-        });
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-
+        setLoading(true);
+        setError(null);
+        const data = await fetchMadlibs(query);
         if (!mounted.current) return;
 
-        const list = Array.isArray(data?.madlibs) ? data.madlibs : [];
-        setMadlibs((prev) => (page === 1 ? list : [...prev, ...list]));
-        setTotal(Number(data?.count ?? list.length));
+        const items = Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+        setMadlibs(items);
+        setServerSearchOK(true);
       } catch (e) {
-        if (e.name !== "AbortError") setError(e.message || "Failed to load");
+        if (query) {
+          try {
+            const data = await fetchMadlibs(""); // no search
+            const items = Array.isArray(data) ? data : (data.results ?? data.items ?? []);
+            setMadlibs(items);
+            setServerSearchOK(false);
+            setError(null);
+          } catch (e2) {
+            setError(e2.message || "Failed to load");
+          }
+        } else {
+          setError(e.message || "Failed to load");
+        }
       } finally {
-        if (!mounted.current) return;
-        setLoading(false);
-        setLoadingMore(false);
+        if (mounted.current) setLoading(false);
       }
-    }
+    })();
+    return () => { mounted.current = false; };
+  }, [query]);
 
-    run();
-    return () => {
-      mounted.current = false;
-      ctrl.abort();
-    };
-  }, [page]);
-
-  const hasMore = madlibs.length < total;
-
+  // show madlibs
+  const visibleMadlibs = useMemo(() => {
+    if (serverSearchOK || !query) return madlibs;
+    const q = query.toLowerCase();
+    return madlibs.filter(m =>
+      (m.title || "").toLowerCase().includes(q)
+    );
+  }, [madlibs, query, serverSearchOK]);
+  // submit function
+  function onSubmit(e) {
+    e.preventDefault();
+    setQuery(input.trim());
+  }
+  // html styling
   return (
     <div className="explore container">
+      {/* Header */}
       <div className="explore-head" style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:".75rem",margin:"0 0 .5rem"}}>
         <h1 style={{margin:0,fontSize:"1.5rem"}}>Explore</h1>
-        <Link className="btn btn--secondary" to="/create">Create</Link>
       </div>
 
+      {/* Search */}
+      <form className="searchbar" onSubmit={onSubmit}>
+        <input
+          className="form-input searchbar-input"
+          type="text"
+          placeholder="Search madlibs by title…"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          aria-label="Search madlibs by title"
+        />
+        <button className="btn" type="submit">Search</button>
+      </form>
+
+      {/* States */}
       {error && (
         <div className="explore-state explore-state--error">
-          <p>Couldn’t load explore feed.</p>
+          <p>Couldn’t load madlibs.</p>
           <code>{error}</code>
-          <button className="btn" onClick={() => { setPage(1); }}>Retry</button>
+          <button className="btn" onClick={() => { setInput(""); setQuery(""); }}>Reset</button>
         </div>
       )}
 
       {loading && <ExploreSkeleton />}
 
-      {!loading && !error && madlibs.length === 0 && (
+      {!loading && !error && visibleMadlibs.length === 0 && (
         <div className="explore-state">
-          <p>No posts yet. Be the first to create one!</p>
-          <Link className="btn btn--primary" to="/create">Create a Madlib</Link>
+          <p>No madlibs found.</p>
         </div>
       )}
 
-      {!loading && !error && madlibs.length > 0 && (
-        <>
-          <div className="explore-grid">
-            {madlibs.map((item) => (
-              <ExploreCard key={item._id || item.id} item={item} />
-            ))}
-          </div>
-
-          {hasMore && (
-            <div className="explore-more">
-              <button
-                className="btn"
-                onClick={() => setPage((p) => p + 1)}
-                disabled={loadingMore}
-              >
-                {loadingMore ? "Loading…" : "Load more"}
-              </button>
-            </div>
-          )}
-        </>
+      {/* Grid of madlibs only */}
+      {!loading && !error && visibleMadlibs.length > 0 && (
+        <div className="explore-grid">
+          {visibleMadlibs.map((item) => (
+            <MadlibCard key={item.id || item._id} item={item} />
+          ))}
+        </div>
       )}
     </div>
   );
 }
-
-function ExploreCard({ item }) {
-  const id = item._id || item.id;
+// display madlib and information
+function MadlibCard({ item }) {
+  const id = item.id || item._id;
   const title = item.title || "Untitled Madlib";
-  const username = item.username || item.author || "@user";
-  const likes = item.likes ?? 0;
-  const comments = item.comments ?? 0;
+  const author = item.author?.username || item.username || "@user";
 
   return (
     <article className="card explore-card">
-      <Link className="explore-thumb img-placeholder" to={`/post/${id}`} aria-label={`Open ${title}`}>
-        <span>Image</span>
-      </Link>
-
       <div className="explore-body">
-        <h3 className="explore-title">
-          <Link to={`/post/${id}`}>{title}</Link>
+        <h3 className="explore-title" style={{marginTop: ".75rem"}}>
         </h3>
-
         <p className="explore-meta">
-          <span>{username}</span>
-          <span>•</span>
-          <span>❤️ {likes}</span>
-          <span>💬 {comments}</span>
+          <span>{author}</span>
         </p>
-
-        <div style={{display:"flex",gap:".5rem"}}>
-          <Link className="btn btn--tiny" to={`/post/${id}`}>View</Link>
-          <Link className="btn btn--tiny" to="/login">Like</Link>
-          <Link className="btn btn--tiny" to="/login">Comment</Link>
-        </div>
       </div>
     </article>
   );
@@ -146,8 +151,7 @@ function ExploreSkeleton() {
     <div className="explore-grid">
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="card explore-card skel">
-          <div className="explore-thumb skel-box" />
-          <div className="explore-body">
+          <div className="explore-body" style={{padding: ".9rem"}}>
             <div className="skel-line" />
             <div className="skel-line skel-line--short" />
           </div>

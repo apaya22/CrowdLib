@@ -4,6 +4,7 @@ import os
 
 load_dotenv()
 
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-%s^cc61v(u)=*_owba2+a@hnfnxa%a8vgnt26v!&0@21_*jz7w'
@@ -76,6 +77,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+CORS_ALLOW_CREDENTIALS = True
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -89,6 +92,16 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+SESSION_ENGINE = 'core.sessions'
+#SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+# Session cookie settings for OAuth
+SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cookies to be sent with OAuth redirects
+SESSION_COOKIE_HTTPONLY = True   # Prevent JavaScript access to session cookie
+SESSION_COOKIE_SECURE = False    # Set to True in production with HTTPS
+SESSION_COOKIE_AGE = 1209600     # 2 weeks in seconds
+
 
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
@@ -140,41 +153,81 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
     'access_type': 'offline',
 }
 
-
-# Added J.K
-SOCIAL_AUTH_GOOGLE_OAUTH2_USE_UNIQUE_USER_ID = True  # Use Google ID
+SOCIAL_AUTH_GOOGLE_OAUTH2_USE_UNIQUE_USER_ID = True  # Use Google ID, not email
 SOCIAL_AUTH_UNIQUE_USER_EMAIL = True  # Don't allow multiple accounts with same email
 SOCIAL_AUTH_PROTECTED_USER_FIELDS = ['email', 'username']
 
-
-
-#added 4:29 pm 11/1 JK
-# Allow dev hosts
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
-
-# CORS for the Vite dev server
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-CORS_ALLOW_CREDENTIALS = True  # allow cookies over CORS
-
-# CSRF trust so SessionAuthentication + cookies work from 5173
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
-# Social-auth: allow redirecting back to the FRONTEND after Google
-SOCIAL_AUTH_ALLOWED_REDIRECT_HOSTS = ["localhost:5173", "127.0.0.1:5173"]
-
-
-# added 5:08 pm 11/1
-
-SESSION_COOKIE_DOMAIN = "localhost"
-
-SESSION_COOKIE_SAMESITE = "None"
-CSRF_COOKIE_SAMESITE = "None"
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {name} {funcName}:{lineno} - {message}',
+            'style': '{',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+        'simple': {
+            'format': '[{levelname}] {name} - {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'core': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'core.settings': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'core.sessions': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'madlibs': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'madlibs.models': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'madlibs.views': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users.models': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'users.views': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
