@@ -1,4 +1,12 @@
 import { Link } from "react-router-dom";
+export const BACKEND = "http://127.0.0.1:8000";     // use the SAME host you used in Django & Google
+export const FRONTEND = window.location.origin;     // e.g., http://localhost:5173
+
+export function startGoogleOAuth(nextPath = "/oauth-return") {
+  const nextUrl = new URL(nextPath, FRONTEND).toString();
+  const url = `${BACKEND}/auth/login/google-oauth2/?next=${encodeURIComponent(nextUrl)}`;
+  window.location.assign(url);
+}
 
 export default function Login() {
   return (
@@ -10,7 +18,7 @@ export default function Login() {
         </div>
 
         {/* Google OAuth here */}
-        <button className="btn btn--oauth" type="button" aria-label="Sign in with Google">
+        <button className="btn btn--oauth" type="button" aria-label="Sign in with Google" onClick={() => startGoogleOAuth("/oauth-return")}>
           <GoogleIcon />
           <span>Continue with Google</span>
         </button>
