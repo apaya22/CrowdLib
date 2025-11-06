@@ -5,13 +5,11 @@ const BACKEND = "http://127.0.0.1:8000";     // <- define this
 const API = `${BACKEND}/api/users/`;
 const FRONTEND = window.location.origin; // http://localhost:5173
 
-const handleGoogleSignup = () => {
-  const nextUrl = `${FRONTEND}/oauth-complete-signup`;
-  window.location.assign(
-    `${BACKEND}/auth/login/google-oauth2/?next=${encodeURIComponent(nextUrl)}`
-  );
-};
-
+export function handleGoogleSignup(nextPath = "/oauth-return") {
+  const nextUrl = new URL(nextPath, FRONTEND).toString();
+  const url = `${BACKEND}/auth/login/google-oauth2/?next=${encodeURIComponent(nextUrl)}`;
+  window.location.assign(url);
+}
 
 function AuthDivider({ label = "or" }) {
   return (
@@ -44,13 +42,6 @@ export default function Signup() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
-
-  const handleGoogleSignup = () => {
-    // After OAuth, backend redirects back to this frontend route
-    window.location.assign(
-      `${BACKEND}/auth/login/google-oauth2/?next=/oauth-complete-signup`
-    );
-  };
 
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -103,7 +94,7 @@ export default function Signup() {
         </div>
 
         {/* Google OAuth here */}
-        <button className="btn btn--oauth" type="button" aria-label="Sign un with Google" onClick={handleGoogleSignup}>
+        <button className="btn btn--oauth" type="button" aria-label="Sign un with Google" onClick={() => handleGoogleSignup("/")}>
           <GoogleIcon />
           <span>Continue with Google</span>
         </button>
