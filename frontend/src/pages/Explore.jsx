@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
-// API Base
-const API_ROOT =
-  (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+const API_ROOT = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
 
 export default function Explore() {
   // set states
@@ -16,10 +14,9 @@ export default function Explore() {
   const [input, setInput] = useState("");
   const [query, setQuery] = useState("");
   const [serverSearchOK, setServerSearchOK] = useState(true);
-
   // get from API
   async function fetchMadlibs(q = "") {
-    const url = new URL(`${API_ROOT}/madlibs/`);
+    const url = new URL(`${API_ROOT}/templates/`);
     if (q) url.searchParams.set("search", q);
     const res = await fetch(url.toString(), {
       credentials: "include",
@@ -47,7 +44,7 @@ export default function Explore() {
       } catch (e) {
         if (query) {
           try {
-            const data = await fetchMadlibs(""); // no search
+            const data = await fetchMadlibs("");
             const items = Array.isArray(data) ? data : (data.results ?? data.items ?? []);
             setMadlibs(items);
             setServerSearchOK(false);
@@ -73,6 +70,7 @@ export default function Explore() {
       (m.title || "").toLowerCase().includes(q)
     );
   }, [madlibs, query, serverSearchOK]);
+
   // submit function
   function onSubmit(e) {
     e.preventDefault();
@@ -131,12 +129,13 @@ export default function Explore() {
 function MadlibCard({ item }) {
   const id = item.id || item._id;
   const title = item.title || "Untitled Madlib";
-  const author = item.author?.username || item.username || "@user";
+  const author = item.author?.username || item.username || "Crowdlib Team";
 
   return (
     <article className="card explore-card">
       <div className="explore-body">
         <h3 className="explore-title" style={{marginTop: ".75rem"}}>
+          <Link to={`/madlibs/${id}`}>{title}</Link>
         </h3>
         <p className="explore-meta">
           <span>{author}</span>
