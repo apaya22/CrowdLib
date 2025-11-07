@@ -1,0 +1,236 @@
+@startuml CrowdLib_Component_Hierarchy
+
+skinparam backgroundColor #F8F8F8
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 50
+skinparam packageStyle rectangle
+
+title CrowdLib - Component Hierarchy Diagram\n(Frontend & Backend Structure)
+
+' ====================
+' FRONTEND HIERARCHY
+' ====================
+package "Frontend (React SPA)" as frontend_root #E3F2FD {
+
+  [main.jsx\n(Entry Point)] as main
+
+  package "App.jsx\n(Root Component)" as app_root #BBDEFB {
+
+    [React Router] as router
+
+    package "Pages" as pages #90CAF9 {
+      [Home.jsx] as home
+      [Explore.jsx] as explore
+      [Create.jsx] as create
+      [Profile.jsx] as profile
+      [Login.jsx] as login
+      [Signup.jsx] as signup
+    }
+
+    package "Components" as components #64B5F6 {
+      [Navbar.jsx] as navbar
+      [PostCard.jsx] as postcard
+      [FeatureCard.jsx] as featurecard
+      [MadlibCard.jsx] as madlibcard
+      [ExploreSkeleton.jsx] as skeleton
+    }
+
+    package "Services" as services #42A5F5 {
+      [APIClient] as apiclient
+      [useAuth Hook] as useauth
+    }
+  }
+}
+
+' ====================
+' BACKEND HIERARCHY
+' ====================
+package "Backend (Django)" as backend_root #E8F5E9 {
+
+  [manage.py\n(Entry Point)] as manage
+
+  package "core/\n(Settings & Config)" as core_pkg #C8E6C9 {
+    [settings.py] as settings
+    [urls.py\n(URL Router)] as urls
+    [db_connect.py] as dbconnect
+    [middleware/] as middleware
+  }
+
+  package "users/\n(App Module)" as users_app #A5D6A7 {
+    [views.py\nUserViewSet] as user_views
+    [models.py\nUserOperations] as user_models
+    [urls.py] as user_urls
+  }
+
+  package "madlibs/\n(App Module)" as madlibs_app #81C784 {
+    [views.py\nTemplateViewSet\nMadlibViewSet] as madlib_views
+    [models.py\nMadLibTemplate\nUserFilledMadlibs] as madlib_models
+    [urls.py] as madlib_urls
+  }
+
+  package "social/\n(App Module)" as social_app #66BB6A {
+    [views.py\n(Placeholder)] as social_views
+    [models.py\nLikeModel\nCommentModel] as social_models
+    [urls.py] as social_urls
+  }
+
+  package "feed/\n(App Module)" as feed_app #4CAF50 {
+    [views.py\n(Placeholder)] as feed_views
+    [models.py\nFeedOperations] as feed_models
+    [urls.py] as feed_urls
+  }
+
+  package "authentication/\n(OAuth)" as auth_pkg #388E3C {
+    [GoogleOAuth2Backend] as oauth_backend
+    [AuthPipeline] as auth_pipeline
+  }
+}
+
+' ====================
+' EXTERNAL SYSTEMS
+' ====================
+package "External Systems" as external_systems #FFF3E0 {
+  database "MongoDB Atlas" as mongodb #FFE0B2
+  cloud "Google OAuth 2.0" as google #FFCC80
+  cloud "AWS S3" as s3 #FFB74D
+}
+
+' ====================
+' FRONTEND RELATIONSHIPS
+' ====================
+main --> app_root : renders
+
+router --> pages : routes to
+router --> home
+router --> explore
+router --> create
+router --> profile
+router --> login
+router --> signup
+
+home --> navbar : uses
+home --> featurecard : renders
+home --> postcard : renders
+
+explore --> madlibcard : renders
+explore --> skeleton : shows loading
+explore --> apiclient : fetches data
+
+create --> apiclient : fetches data
+
+profile --> apiclient : fetches data
+
+login --> useauth : authenticates
+login --> apiclient : calls
+
+signup --> useauth : registers
+signup --> apiclient : calls
+
+apiclient --> backend_root : HTTP requests
+
+' ====================
+' BACKEND RELATIONSHIPS
+' ====================
+manage --> settings : loads config
+
+settings --> core_pkg : configures
+settings --> users_app : registers
+settings --> madlibs_app : registers
+settings --> social_app : registers
+settings --> feed_app : registers
+
+urls --> user_urls : includes
+urls --> madlib_urls : includes
+urls --> social_urls : includes
+urls --> feed_urls : includes
+
+user_urls --> user_views : routes to
+user_views --> user_models : uses
+
+madlib_urls --> madlib_views : routes to
+madlib_views --> madlib_models : uses
+
+social_urls --> social_views : routes to
+social_views --> social_models : uses
+
+feed_urls --> feed_views : routes to
+feed_views --> feed_models : uses
+
+middleware --> auth_pipeline : uses
+middleware --> oauth_backend : authenticates
+
+' ====================
+' BACKEND TO EXTERNAL
+' ====================
+user_models --> dbconnect : queries via
+madlib_models --> dbconnect : queries via
+social_models --> dbconnect : queries via
+feed_models --> dbconnect : queries via
+
+dbconnect --> mongodb : connects to
+
+oauth_backend --> google : authenticates with
+
+user_models --> s3 : uploads to (planned)
+
+' ====================
+' CROSS-CUTTING
+' ====================
+note right of apiclient
+  Base URL: http://127.0.0.1:8000/api
+
+  Endpoints:
+  - /users/
+  - /templates/
+  - /madlibs/
+  - /auth/login/
+end note
+
+note right of dbconnect
+  MongoDB Collections:
+  - users
+  - story_templates
+  - filled_madlibs
+  - likes
+  - comments
+  - feed
+  - sessions
+end note
+
+note bottom of router
+  Routes:
+  / → Home
+  /explore → Explore
+  /create → Create
+  /profile → Profile
+  /login → Login
+  /signup → Signup
+end note
+
+note bottom of urls
+  API Routes:
+  /api/users/
+  /api/templates/
+  /api/madlibs/
+  /auth/login/google-oauth2/
+end note
+
+legend right
+  |= Color Legend |
+  | <#E3F2FD> | Frontend Root |
+  | <#BBDEFB> | React App |
+  | <#90CAF9> | Pages Layer |
+  | <#64B5F6> | Components |
+  | <#42A5F5> | Services |
+  | <#E8F5E9> | Backend Root |
+  | <#C8E6C9> | Core/Config |
+  | <#A5D6A7> | Users Module |
+  | <#81C784> | Madlibs Module |
+  | <#66BB6A> | Social Module |
+  | <#4CAF50> | Feed Module |
+  | <#388E3C> | Authentication |
+  | <#FFF3E0> | External Systems |
+endlegend
+
+@enduml

@@ -1,0 +1,223 @@
+---
+config:
+  layout: dagre
+  theme: redux
+title: CrowdLib Backend - Class Diagram
+---
+classDiagram
+    direction TB
+    namespace ViewSets {
+        class UserViewSet {
+        <<ViewSet>>
+        -UserOperations user_service
+        +list() Response
+        +create() Response
+        +retrieve(pk) Response
+        +update(pk) Response
+        +destroy(pk) Response
+        +by_username() Response
+        +by_email() Response
+        +profile() Response
+    }
+    class MadLibTemplateViewSet {
+        <<ViewSet>>
+        -MadLibTemplate template_service
+        +list() Response
+        +create() Response
+        +retrieve(pk) Response
+        +update(pk) Response
+        +destroy(pk) Response
+        +search() Response
+    }
+    class UserFilledMadlibsViewSet {
+        <<ViewSet>>
+        -UserFilledMadlibs madlibs_service
+        +create() Response
+        +retrieve(pk) Response
+        +update(pk) Response
+        +destroy(pk) Response
+        +by_creator() Response
+    }
+    class LikeViewSet {
+        <<ViewSet - Future>>
+        -LikeModel like_service
+        +list() Response
+        +create() Response
+        +destroy(pk) Response
+    }
+    class CommentViewSet {
+        <<ViewSet - Future>>
+        -CommentModel comment_service
+        +list() Response
+        +create() Response
+        +update(pk) Response
+        +destroy(pk) Response
+    }
+    class ImageViewSet {
+        <<ViewSet - Future>>
+        -ImageOperations image_service
+        +list() Response
+        +create_image(filled_id) Response
+        +delete_image(filled_id) Response
+    }
+    }
+    namespace Models {
+        class UserOperations {
+        <<Repository + Model>>
+        -Collection collection
+        -ObjectId _id
+        -str username
+        -str email
+        -str oauth_provider
+        -str oauth_id
+        -str profile_picture
+        -str bio
+        -datetime created_at
+        -datetime updated_at
+        +create() str
+        +get_by_id(user_id) Dict
+        +get_by_username(username) Dict
+        +get_by_email(email) Dict
+        +update_profile(user_id) bool
+        +delete(user_id) bool
+        +get_all(limit) List
+    }
+    class MadLibTemplate {
+        <<Repository + Model>>
+        -Collection collection
+        -ObjectId _id
+        -str title
+        -str description
+        -str story
+        -List blanks
+        -List tags
+        +create(madlib_data) str
+        +get_by_id(madlib_id) Dict
+        +search_by_title(title) List
+        +get_all(limit) List
+        +update(madlib_id) bool
+        +delete(madlib_id) bool
+    }
+    class UserFilledMadlibs {
+        <<Repository + Model>>
+        -Collection collection
+        -ObjectId _id
+        -ObjectId template_id
+        -ObjectId creator_id
+        -str image_link
+        -List content
+        -datetime created_at
+        +new_filled_madlib() str
+        +update_filled_madlib() bool
+        +delete_filled_madlib() bool
+        +get_by_id(filled_madlib_id) Dict
+        +get_by_creator(creator_id) List
+    }
+    class LikeModel {
+        <<Repository + Model - Future>>
+        -Collection collection
+        -ObjectId _id
+        -ObjectId user_id
+        -ObjectId post_id
+        -ObjectId comment_id
+        -datetime created_at
+        +like_post(user_id, post_id) ObjectId
+        +like_comment(user_id, comment_id) ObjectId
+        +get_post_likes_count(post_id) int
+        +user_liked_post(user_id, post_id) bool
+    }
+    class CommentModel {
+        <<Repository + Model - Future>>
+        -Collection collection
+        -ObjectId _id
+        -ObjectId user_id
+        -ObjectId post_id
+        -str text
+        -int likes_count
+        +add_comment(user_id, post_id, text) ObjectId
+        +get_post_comments(post_id) List
+        +delete_comment(comment_id) bool
+    }
+    class ImageOperations {
+        <<AI Service - Future>>
+        -str system_prompt
+        -str api_key
+        -str s3_bucket
+        +generate_image(filled_id) str
+        +remove_image(filled_id) bool
+        +upload_to_s3(image_data, filename) str
+    }
+    }
+    class DBConnect {
+        <<Utility>>
+        -MongoClient client
+        -Database database
+        +get_collection(name) Collection
+        +get_database() Database
+        +close_connection() void
+    }
+        class URLRouter {
+        <<Router>>
+        -List patterns
+        +register(viewset, basename) void
+        +get_urls() List
+    }
+    namespace Infrastructure {
+    class GoogleOAuth2Backend {
+        <<OAuth>>
+        -str PROVIDER
+        -str client_id
+        -str client_secret
+        +authenticate(request, token) User
+        +get_user_details(response) Dict
+    }
+    class AuthPipeline {
+        <<Pipeline>>
+        +create_user() Dict
+        +save_profile() void
+        +associate_by_email() Dict
+        +create_mongodb_user() void
+    }
+    class Middleware {
+        <<Middleware>>
+        +process_request(request) Request
+        +process_response(request, response) Response
+    }
+    class SessionEngine {
+        <<Session>>
+        -Collection collection
+        +save(session_key, session_data) void
+        +load(session_key) Dict
+        +delete(session_key) void
+    }
+    }
+    UserViewSet --> UserOperations : uses
+    MadLibTemplateViewSet --> MadLibTemplate : uses
+    UserFilledMadlibsViewSet --> UserFilledMadlibs : uses
+    LikeViewSet --> LikeModel : uses
+    CommentViewSet --> CommentModel : uses
+    ImageViewSet --> ImageOperations : uses
+    UserOperations --> DBConnect : queries
+    MadLibTemplate --> DBConnect : queries
+    UserFilledMadlibs --> DBConnect : queries
+    LikeModel --> DBConnect : queries
+    CommentModel --> DBConnect : queries
+    UserFilledMadlibs ..> MadLibTemplate : references
+    UserFilledMadlibs ..> UserOperations : references
+    LikeModel ..> UserFilledMadlibs : likes
+    CommentModel ..> UserFilledMadlibs : comments on
+    ImageOperations ..> UserFilledMadlibs : updates
+    GoogleOAuth2Backend --> UserOperations : creates
+    AuthPipeline --> UserOperations : saves to
+    Middleware --> SessionEngine : uses
+    Middleware --> GoogleOAuth2Backend : uses
+    URLRouter o-- UserViewSet : registers
+    URLRouter o-- MadLibTemplateViewSet : registers
+    URLRouter o-- UserFilledMadlibsViewSet : registers
+    URLRouter o-- LikeViewSet : registers
+    URLRouter o-- CommentViewSet : registers
+    URLRouter o-- ImageViewSet : registers
+    note for UserViewSet "Current Feature<br>Endpoints: /api/users/<br>Handles user CRUD + profile"
+    note for LikeViewSet "Future Feature<br>Endpoints: /api/likes/<br>Social engagement"
+    note for ImageViewSet "Future Feature<br>AI generation via Gemini/GPT<br>Uploads to AWS S3"
+    note for DBConnect "MongoDB Atlas<br>Collections: users, story_templates,<br>filled_madlibs, likes, comments,<br>feed, sessions"

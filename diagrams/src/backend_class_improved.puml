@@ -1,0 +1,322 @@
+@startuml CrowdLib_Backend_Class_Diagram_Improved
+
+!define VIEWSET_COLOR #E3F2FD
+!define MODEL_COLOR #FFF3E0
+!define INFRA_COLOR #E8F5E9
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 30
+'skinparam padding 3
+skinparam backgroundColor #F8F8F8
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #666666
+}
+skinparam packageStyle rectangle
+skinparam dpi 150
+
+' Change to left-to-right layout for better width management
+top to bottom direction
+
+title CrowdLib Backend - Class Diagram (Improved Layout)\n(Django REST API - Current & Future Features)
+
+' ====================
+' VIEWSETS - CURRENT FEATURES
+' ====================
+together {
+  class UserViewSet <<ViewSet>> VIEWSET_COLOR {
+    - user_service: UserOperations
+    __CRUD Methods__
+    + list(), create(), retrieve()
+    + update(), destroy()
+    __Custom Methods__
+    + by_username(), by_email()
+    + profile()
+  }
+
+  class MadLibTemplateViewSet <<ViewSet>> VIEWSET_COLOR {
+    - template_service: MadLibTemplate
+    __CRUD Methods__
+    + list(), create(), retrieve()
+    + update(), destroy()
+    __Custom Methods__
+    + search()
+  }
+
+  class UserFilledMadlibsViewSet <<ViewSet>> VIEWSET_COLOR {
+    - madlibs_service: UserFilledMadlibs
+    __CRUD Methods__
+    + create(), retrieve()
+    + update(), destroy()
+    __Custom Methods__
+    + by_creator()
+  }
+}
+
+' ====================
+' VIEWSETS - FUTURE FEATURES
+' ====================
+together {
+  class LikeViewSet <<ViewSet>> VIEWSET_COLOR {
+    - like_service: LikeModel
+    + list(), create()
+    + destroy()
+  }
+
+  class CommentViewSet <<ViewSet>> VIEWSET_COLOR {
+    - comment_service: CommentModel
+    + list(), create()
+    + update(), destroy()
+  }
+
+  class ImageViewSet <<ViewSet>> VIEWSET_COLOR {
+    - image_service: ImageOperations
+    + list(), create_image()
+    + delete_image()
+  }
+}
+
+' ====================
+' OPERATIONS/MODELS - CORE
+' ====================
+together {
+  class UserOperations <<Repository + Model>> MODEL_COLOR {
+    - collection: Collection
+    __MongoDB Fields (users)__
+    - _id, username, email
+    - oauth_provider, oauth_id
+    - profile_picture, bio
+    - created_at, updated_at
+    __Methods__
+    + create(), get_by_id()
+    + get_by_username()
+    + get_by_email()
+    + update_profile()
+    + delete(), get_all()
+  }
+
+  class MadLibTemplate <<Repository + Model>> MODEL_COLOR {
+    - collection: Collection
+    __MongoDB Fields (story_templates)__
+    - _id, title, description
+    - story, blanks, tags
+    __Methods__
+    + create(), get_by_id()
+    + search_by_title()
+    + get_all(), update()
+    + delete()
+  }
+
+  class UserFilledMadlibs <<Repository + Model>> MODEL_COLOR {
+    - collection: Collection
+    __MongoDB Fields (filled_madlibs)__
+    - _id, template_id [FK]
+    - creator_id [FK]
+    - image_link, content
+    - created_at
+    __Methods__
+    + new_filled_madlib()
+    + update_filled_madlib()
+    + delete_filled_madlib()
+    + get_by_id(), get_by_creator()
+  }
+}
+
+' ====================
+' OPERATIONS/MODELS - SOCIAL & AI
+' ====================
+together {
+  class LikeModel <<Repository + Model>> MODEL_COLOR {
+    - collection: Collection
+    __MongoDB Fields (likes)__
+    - _id, user_id [FK]
+    - post_id [FK], comment_id [FK]
+    - created_at
+    __Methods__
+    + like_post(), like_comment()
+    + get_post_likes_count()
+    + user_liked_post()
+  }
+
+  class CommentModel <<Repository + Model>> MODEL_COLOR {
+    - collection: Collection
+    __MongoDB Fields (comments)__
+    - _id, user_id [FK]
+    - post_id [FK], text
+    - likes_count
+    __Methods__
+    + add_comment()
+    + get_post_comments()
+    + delete_comment()
+  }
+
+  class ImageOperations <<AI Service>> MODEL_COLOR {
+    - system_prompt: str
+    - api_key: str
+    - s3_bucket: str
+    __Methods__
+    + generate_image()
+    + remove_image()
+    + upload_to_s3()
+  }
+}
+
+' ====================
+' INFRASTRUCTURE
+' ====================
+together {
+  class DBConnect <<Utility>> INFRA_COLOR {
+    - client: MongoClient
+    - database: Database
+    + get_collection()
+    + get_database()
+    + close_connection()
+  }
+
+  class GoogleOAuth2Backend <<OAuth>> INFRA_COLOR {
+    - PROVIDER = "google-oauth2"
+    - client_id, client_secret
+    + authenticate()
+    + get_user_details()
+  }
+
+  class AuthPipeline <<Pipeline>> INFRA_COLOR {
+    + create_user()
+    + save_profile()
+    + associate_by_email()
+    + create_mongodb_user()
+  }
+}
+
+together {
+  class URLRouter <<Router>> INFRA_COLOR {
+    - patterns: List[URLPattern]
+    + register()
+    + get_urls()
+  }
+
+  class Middleware <<Middleware>> INFRA_COLOR {
+    + process_request()
+    + process_response()
+  }
+
+  class SessionEngine <<Session>> INFRA_COLOR {
+    - collection: Collection
+    + save(), load()
+    + delete()
+  }
+}
+
+' ====================
+' RELATIONSHIPS - VERTICAL FLOW
+' ====================
+
+' ViewSets use Operations
+UserViewSet --> UserOperations : uses
+MadLibTemplateViewSet --> MadLibTemplate : uses
+UserFilledMadlibsViewSet --> UserFilledMadlibs : uses
+LikeViewSet --> LikeModel : uses
+CommentViewSet --> CommentModel : uses
+ImageViewSet --> ImageOperations : uses
+
+' Operations use DBConnect
+UserOperations --> DBConnect : queries
+MadLibTemplate --> DBConnect : queries
+UserFilledMadlibs --> DBConnect : queries
+LikeModel --> DBConnect : queries
+CommentModel --> DBConnect : queries
+
+' Auth relationships
+GoogleOAuth2Backend --> UserOperations : creates
+AuthPipeline --> UserOperations : saves to
+
+' Data relationships (dotted for references)
+UserFilledMadlibs ..|> MadLibTemplate : references
+UserFilledMadlibs ..|> UserOperations : references
+LikeModel ..> UserFilledMadlibs : likes
+CommentModel ..> UserFilledMadlibs : comments on
+ImageOperations ..> UserFilledMadlibs : updates
+
+' Middleware connections
+Middleware --> SessionEngine : uses
+Middleware --> GoogleOAuth2Backend : uses
+
+' ====================
+' HIDDEN LAYOUT HINTS (Top-to-Bottom)
+' ====================
+
+' Create vertical layers - force alignment
+UserViewSet -[hidden]down-> UserOperations
+MadLibTemplateViewSet -[hidden]down-> MadLibTemplate
+UserFilledMadlibsViewSet -[hidden]down-> UserFilledMadlibs
+
+LikeViewSet -[hidden]down-> LikeModel
+CommentViewSet -[hidden]down-> CommentModel
+ImageViewSet -[hidden]down-> ImageOperations
+
+' Force horizontal grouping within layers
+UserViewSet -[hidden]right-> MadLibTemplateViewSet
+MadLibTemplateViewSet -[hidden]right-> UserFilledMadlibsViewSet
+LikeViewSet -[hidden]right-> CommentViewSet
+CommentViewSet -[hidden]right-> ImageViewSet
+
+UserOperations -[hidden]right-> MadLibTemplate
+MadLibTemplate -[hidden]right-> UserFilledMadlibs
+LikeModel -[hidden]right-> CommentModel
+CommentModel -[hidden]right-> ImageOperations
+
+' Infrastructure layer - keep them together
+'DBConnect -[hidden]right-> GoogleOAuth2Backend
+'GoogleOAuth2Backend -[hidden]right-> AuthPipeline
+'AuthPipeline -[hidden]right-> URLRouter
+'URLRouter -[hidden]right-> Middleware
+'Middleware -[hidden]right-> SessionEngine
+
+' Position infrastructure below models
+UserOperations -[hidden]down-> DBConnect
+MadLibTemplate -[hidden]down-> GoogleOAuth2Backend
+UserFilledMadlibs -[hidden]down-> AuthPipeline
+
+' ====================
+' NOTES - POSITIONED TOP/BOTTOM
+' ====================
+
+note top of UserViewSet
+  **Current Feature**
+  Endpoints: /api/users/
+  Handles user CRUD + profile
+end note
+
+note top of LikeViewSet
+  **Future Feature**
+  Endpoints: /api/likes/
+  Social engagement
+end note
+
+note top of ImageViewSet
+  **Future Feature**
+  AI via Gemini/GPT
+  Storage: AWS S3
+end note
+
+note bottom of DBConnect
+  MongoDB Atlas
+  Collections: users, story_templates,
+  filled_madlibs, likes, comments,
+  feed, sessions
+end note
+
+legend bottom right
+  |= Color Legend |
+  | <back:#E3F2FD>   </back> | API ViewSets |
+  | <back:#FFF3E0>   </back> | Models & Services |
+  | <back:#E8F5E9>   </back> | Infrastructure |
+  |= Symbol Legend |
+  | \u2192 (solid) | Direct usage/dependency |
+  | \u21E2 (dotted) | Data reference/association |
+endlegend
+
+@enduml

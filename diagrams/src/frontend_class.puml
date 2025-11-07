@@ -1,0 +1,380 @@
+@startuml CrowdLib_Frontend_Class_Diagram
+
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+skinparam backgroundColor #F8F8F8
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #666666
+}
+
+title CrowdLib Frontend - Detailed Class Diagram\n(React SPA)
+
+' ====================
+' MAIN APP COMPONENT
+' ====================
+package "Application Root" {
+
+  class App <<Component>> {
+    ' Props: None (root component)
+
+    ' State: None (stateless router)
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+}
+
+' ====================
+' PAGE COMPONENTS
+' ====================
+package "Pages (Route Components)" {
+
+  class Home <<Page Component>> {
+    ' Props: None
+
+    ' State: None (static landing page)
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+  class Explore <<Page Component>> {
+    ' Props: None
+
+    ' State
+    - mounted: MutableRefObject<boolean>
+    - madlibs: Array<MadlibData>
+    - loading: boolean
+    - error: string | null
+    - input: string
+    - query: string
+    - serverSearchOK: boolean
+
+    ' Methods
+    + fetchMadlibs(q: string): Promise<MadlibData[]>
+    + onSubmit(e: FormEvent): void
+    + render(): JSX.Element
+
+    ' Computed Values
+    + visibleMadlibs: Array<MadlibData>
+  }
+
+  class Create <<Page Component>> {
+    ' Props: None
+
+    ' State
+    - mode: "fill" | "create"
+    - input: string
+    - query: string
+    - templates: Array<TemplateData>
+    - tplLoading: boolean
+    - tplError: string | null
+    - selectedId: string | null
+    - fillValues: Array<string>
+    - title: string
+    - content: string
+
+    ' Methods
+    + extractBlanks(text: string): Array<Blank>
+    + fillTemplate(text: string, values: Array<string>): string
+    + getCookie(name: string): string
+    + handleFillChange(i: number, val: string): void
+    + requireAuthOrRedirect(): Promise<boolean>
+    + onSubmitCreate(e: FormEvent): Promise<void>
+    + onSubmitFill(e: FormEvent): void
+    + onSearchSubmit(e: FormEvent): void
+    + render(): JSX.Element
+
+    ' Computed Values
+    + selectedTemplate: TemplateData | undefined
+    + blanks: Array<Blank>
+    + safeFillValues: Array<string>
+    + filledPreview: string
+  }
+
+  class Profile <<Page Component>> {
+    ' Props: None
+
+    ' State
+    - user: User | null
+    - madlibs: Array<MadlibData>
+    - loading: boolean
+    - error: string | null
+
+    ' Methods
+    + fetchUserProfile(): Promise<void>
+    + fetchUserMadlibs(): Promise<void>
+    + render(): JSX.Element
+  }
+
+  class Login <<Page Component>> {
+    ' Props: None
+
+    ' State
+    - email: string
+    - password: string
+    - error: string | null
+    - loading: boolean
+
+    ' Methods
+    + handleSubmit(e: FormEvent): Promise<void>
+    + handleOAuthLogin(provider: string): void
+    + render(): JSX.Element
+  }
+
+  class Signup <<Page Component>> {
+    ' Props: None
+
+    ' State
+    - username: string
+    - email: string
+    - password: string
+    - confirmPassword: string
+    - error: string | null
+    - loading: boolean
+
+    ' Methods
+    + handleSubmit(e: FormEvent): Promise<void>
+    + validateForm(): boolean
+    + render(): JSX.Element
+  }
+
+}
+
+' ====================
+' REUSABLE COMPONENTS
+' ====================
+package "Reusable Components" {
+
+  class Navbar <<Component>> {
+    ' Props: None
+
+    ' Methods
+    + linkStyle(isActive: boolean): CSSProperties
+    + render(): JSX.Element
+  }
+
+  class PostCard <<Component>> {
+    ' Props
+    + username: string
+    + title: string
+    + excerpt: string
+    + likes: number
+    + comments: number
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+  class FeatureCard <<Component>> {
+    ' Props
+    + title: string
+    + desc: string
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+  class MadlibCard <<Component>> {
+    ' Props
+    + item: MadlibData
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+  class ExploreSkeleton <<Component>> {
+    ' Props: None
+
+    ' Methods
+    + render(): JSX.Element
+  }
+
+}
+
+' ====================
+' UTILITY/HOOK COMPONENTS
+' ====================
+package "Utilities & Hooks" {
+
+  class useAuth <<Custom Hook>> {
+    ' Returns
+    + user: User | null
+
+    ' Methods
+    + login(credentials: Credentials): Promise<void>
+    + logout(): Promise<void>
+    + checkAuth(): Promise<User | null>
+  }
+
+  class APIClient <<Service>> {
+    ' Properties
+    - API_ROOT: string
+
+    ' Methods
+    + fetch(endpoint: string, options: RequestInit): Promise<Response>
+    + get(endpoint: string): Promise<any>
+    + post(endpoint: string, data: any): Promise<any>
+    + put(endpoint: string, data: any): Promise<any>
+    + delete(endpoint: string): Promise<any>
+  }
+
+}
+
+' ====================
+' TYPE DEFINITIONS
+' ====================
+package "Type Definitions" {
+
+  class MadlibData <<Interface>> {
+    + id: string
+    + _id: string
+    + title: string
+    + author: { username: string } | null
+    + username: string
+    + content: string
+    + tags: Array<string>
+    + created_at: string
+  }
+
+  class TemplateData <<Interface>> {
+    + id: string
+    + _id: string
+    + title: string
+    + description: string | null
+    + content: string
+    + blanks: Array<BlankDef>
+    + tags: Array<string>
+  }
+
+  class BlankDef <<Interface>> {
+    + id: string
+    + placeholder: string
+    + type: string
+  }
+
+  class Blank <<Interface>> {
+    + label: string
+    + index: number
+    + token: string
+  }
+
+  class User <<Interface>> {
+    + id: string
+    + username: string
+    + email: string
+    + profile_picture: string | null
+    + bio: string | null
+  }
+
+  class Credentials <<Interface>> {
+    + email: string
+    + password: string
+  }
+
+}
+
+' ====================
+' RELATIONSHIPS
+' ====================
+
+' App component relationships
+App *-- Home : renders
+App *-- Explore : renders
+App *-- Create : renders
+App *-- Profile : renders
+App *-- Login : renders
+App *-- Signup : renders
+App ..> Navbar : uses
+
+' Home page uses components
+Home ..> FeatureCard : renders
+Home ..> PostCard : renders
+
+' Explore page uses components
+Explore ..> MadlibCard : renders
+Explore ..> ExploreSkeleton : renders
+Explore ..> APIClient : fetches data
+
+' Create page uses API
+Create ..> APIClient : fetches data
+
+' Profile page uses API
+Profile ..> APIClient : fetches data
+
+' Login/Signup use auth
+Login ..> useAuth : authenticates
+Signup ..> useAuth : registers
+Login ..> APIClient : calls API
+Signup ..> APIClient : calls API
+
+' Type dependencies
+Explore ..> MadlibData : uses
+Create ..> TemplateData : uses
+Create ..> Blank : uses
+MadlibCard ..> MadlibData : receives
+Profile ..> User : uses
+Login ..> Credentials : uses
+useAuth ..> User : returns
+
+' ====================
+' NOTES
+' ====================
+note top of App
+  Root component using React Router
+  Routes defined:
+  - / → Home
+  - /explore → Explore
+  - /create → Create
+  - /profile → Profile
+  - /login → Login
+  - /signup → Signup
+end note
+
+note right of Explore
+  Features:
+  - Search madlibs by title
+  - Display grid of madlibs
+  - Server-side + client-side search
+  - Loading states & error handling
+end note
+
+note right of Create
+  Dual-mode component:
+  1. Fill Mode: Play existing templates
+  2. Create Mode: Make new templates
+
+  Features:
+  - Template search & selection
+  - Dynamic blank extraction
+  - Real-time preview
+  - OAuth-protected posting
+end note
+
+note bottom of APIClient
+  Handles all HTTP requests to Django backend
+  Base URL: http://127.0.0.1:8000/api
+  Credentials: include (for session cookies)
+end note
+
+note bottom of useAuth
+  Custom authentication hook
+  Currently returns null (placeholder)
+  Will integrate with OAuth flow
+end note
+
+legend right
+  |= Component Types |
+  | <<Component>> | React Functional Component |
+  | <<Page Component>> | Route-level page |
+  | <<Custom Hook>> | React Hook |
+  | <<Service>> | Utility service class |
+  | <<Interface>> | TypeScript-style interface |
+endlegend
+
+@enduml
