@@ -42,7 +42,19 @@ package "Pages (Route Components)" {
     ' Methods
     + render(): JSX.Element
   }
+class MadlibPlay <<Page Component>> {
+  - id: string
+  - template: TemplateData | null
+  - values: Map<string,string>
+  - me: User | null
+  - result: string
+  - loading: boolean
+  - error: string
 
+  + useEffect(): void
+  + onSubmit(e: FormEvent): Promise<void>
+  + render(): JSX.Element
+}
   class Explore <<Page Component>> {
     ' Props: None
 
@@ -301,6 +313,9 @@ Explore ..> MadlibCard : renders
 Explore ..> ExploreSkeleton : renders
 Explore ..> APIClient : fetches data
 
+' MadlibPlay page relationship
+App ..> MadlibPlay : route 
+Explore ..> MadlibPlay : navigates to
 ' Create page uses API
 Create ..> APIClient : fetches data
 
@@ -321,6 +336,10 @@ MadlibCard ..> MadlibData : receives
 Profile ..> User : uses
 Login ..> Credentials : uses
 useAuth ..> User : returns
+MadlibPlay ..> APIClient : uses
+MadlibPlay ..> TemplateData : uses
+MadlibPlay ..> User : uses
+MadlibPlay ..> Blank : uses
 
 ' ====================
 ' NOTES
@@ -334,6 +353,7 @@ note top of App
   - /profile → Profile
   - /login → Login
   - /signup → Signup
+  - /madlibs/:id → MadlibPlay
 end note
 
 note right of Explore
@@ -343,6 +363,17 @@ note right of Explore
   - Server-side + client-side search
   - Loading states & error handling
 end note
+
+note right of MadlibPlay
+Features:
+- View individual Madlib templates
+- Fetch story & blanks from backend
+- Input word types dynamically
+- Generate completed story text
+- Save user-submitted entries via POST
+- Handles missing auth/session
+end note
+
 
 note right of Create
   Dual-mode component:

@@ -1,0 +1,202 @@
+@startuml CrowdLib_C4_Architecture
+
+!define C4_BLUE #438DD5
+!define C4_LIGHTBLUE #85BBF0
+!define C4_GREY #999999
+!define C4_LIGHTGREEN #47A248
+!define C4_GREEN #DarkGreen
+!define C4_DARKGREY #666666
+
+skinparam backgroundColor #FFFFFF
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+title CrowdLib - C4 System Architecture Diagram\n(Container + Component Level)
+
+' ====================
+' EXTERNAL ACTORS
+' ====================
+actor "User" as user <<Person>> #LightSkyBlue
+
+' ====================
+' EXTERNAL SYSTEMS
+' ====================
+rectangle "Google OAuth 2.0" as google <<External System>> #LightGray {
+}
+
+database "MongoDB Atlas" as mongodb <<Database>> C4_GREEN {
+}
+
+cloud "AWS S3" as s3 <<Cloud Storage>> #FF9900 {
+}
+
+' ====================
+' SYSTEM BOUNDARY
+' ====================
+rectangle "CrowdLib System" as crowdlib_boundary {
+
+  ' ====================
+  ' FRONTEND CONTAINER
+  ' ====================
+  rectangle "React SPA\n[React 19.1.1 + Vite]" as frontend <<Container: Web Application>> C4_LIGHTBLUE {
+    package "Pages Layer" as pages {
+      [Home]
+      [Explore]
+      [Create]
+      [Profile]
+      [Login/Signup]
+    }
+
+    package "Components" as components {
+      [Navbar]
+      [PostCard]
+      [FeatureCard]
+      [MadlibCard]
+    }
+
+    package "Routing" as routing {
+      [React Router]
+    }
+
+    package "HTTP Client" as http {
+      [Axios/Fetch]
+    }
+  }
+
+  ' ====================
+  ' BACKEND CONTAINER
+  ' ====================
+  rectangle "Django REST API\n[Django 5.2.x + DRF]" as backend <<Container: API Server>> C4_LIGHTGREEN {
+    package "Core Layer" as core {
+      [URL Router]
+      [Middleware Stack]
+      [Session Engine]
+    }
+
+    package "Users Module" as users_module {
+      [UserViewSet]
+      [UserOperations]
+    }
+
+    package "Madlibs Module" as madlibs_module {
+      [TemplateViewSet]
+      [MadlibViewSet]
+      [MadLibTemplate]
+      [UserFilledMadlibs]
+    }
+
+    package "Social Module" as social_module {
+      [CommentViewSet]
+      [LikeViewSet]
+      [LikeModel]
+      [CommentModel]
+    }
+
+    package "Feed Module" as feed_module {
+      [FeedOperations]
+    }
+
+    package "Authentication" as auth {
+      [GoogleOAuth2Backend]
+      [AuthPipeline]
+    }
+  }
+
+}
+
+' ====================
+' RELATIONSHIPS
+' ====================
+
+' User to Frontend
+user --> frontend : Uses\n[HTTPS]
+
+' Frontend to Backend
+frontend --> backend : API Calls\n[REST/HTTP]
+http --> backend : Requests
+
+' Backend to External Systems
+backend --> google : OAuth Authentication\n[OAuth 2.0 Protocol]
+backend --> mongodb : CRUD Operations\n[MongoDB Driver]
+backend --> s3 : Upload/Retrieve Images\n[AWS SDK]
+
+' Internal Frontend Relationships
+routing --> pages : Routes to
+pages --> components : Renders
+
+' Internal Backend Relationships
+[URL Router] --> users_module : Routes
+[URL Router] --> madlibs_module : Routes
+[URL Router] --> social_module : Routes
+[URL Router] --> feed_module : Routes
+[Middleware Stack] --> auth : Authenticates
+auth --> google : Delegates to
+
+' ViewSets to Operations
+[UserViewSet] --> [UserOperations] : Uses
+[TemplateViewSet] --> [MadLibTemplate] : Uses
+[MadlibViewSet] --> [UserFilledMadlibs] : Uses
+[LikeViewSet] --> [LikeModel]: Uses
+[CommentViewSet] --> [CommentModel]: Uses
+
+' Operations to Database
+[UserOperations] --> mongodb : Queries
+[MadLibTemplate] --> mongodb : Queries
+[UserFilledMadlibs] --> mongodb : Queries
+[LikeModel] --> mongodb : Queries
+[CommentModel] --> mongodb : Queries
+[FeedOperations] --> mongodb : Queries
+
+' ====================
+' NOTES
+' ====================
+note right of frontend
+  **Technology Stack:**
+  - React 19.1.1
+  - Vite 7.1.7
+  - React Router
+  - Axios 1.12.2
+
+  **Deployment:**
+  - SPA (Single Page App)
+  - Client-side routing
+end note
+
+note right of backend
+  **Technology Stack:**
+  - Django 5.2.x
+  - Django REST Framework
+  - Python Social Auth
+  - PyMongo
+
+  **Architecture:**
+  - RESTful API
+  - Modular Django Apps
+  - Repository Pattern
+end note
+
+note bottom of mongodb
+  **Collections:**
+  - users
+  - story_templates
+  - filled_madlibs
+  - likes
+  - comments
+  - feed
+  - sessions
+end note
+
+legend right
+  |= Color Legend |
+  | <C4_LIGHTBLUE> | Frontend (React) |
+  | <C4_LIGHTGREEN> | Backend (Django) |
+  | <C4_GREEN> | Database (MongoDB) |
+  | <#LightGray> | External System |
+  | <#FF9900> | Cloud Storage |
+endlegend
+
+@enduml
