@@ -6,6 +6,8 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, UserViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
+from social.views import upload_madlib_image
+
 
 router = DefaultRouter()
 router.register(r'madlibs', UserFilledMadlibsViewSet, basename='madlib')
@@ -33,4 +35,6 @@ urlpatterns = [
     path('api/debug/oauth/', debug_oauth_data, name='debug-oauth'),
     # User API endpoints
     path('api/debug/oauth/', debug_oauth_data, name='debug-oauth'),
+    # Madlib image upload endpoint
+    path('api/madlibs/<str:madlib_id>/upload-image/', upload_madlib_image, name='upload-madlib-image'),
 ]
