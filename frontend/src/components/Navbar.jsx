@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 const linkStyle = ({ isActive }) => ({
@@ -6,7 +7,26 @@ const linkStyle = ({ isActive }) => ({
   fontWeight: isActive ? 700 : 500,
 });
 
+const API_BASE = "http://127.0.0.1:8000";
+
 export default function Navbar() {
+  const [isLoggedIn, setIsLoggedIn] = useState(true);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/users/profile/`, {
+credentials: "include",})
+      .then((res) => {
+        setIsLoggedIn(res.ok);
+      })
+      .catch(() => {
+        setIsLoggedIn(false);
+      });
+  }, []);
+
+  function handleLogout() {
+    window.location.href = "/";
+  }
+
   return (
     <nav className="nav">
       <div className="brand">CrowdLib</div>
@@ -15,9 +35,20 @@ export default function Navbar() {
         <NavLink to="/explore" style={linkStyle}>Explore</NavLink>
         <NavLink to="/create" style={linkStyle}>Create</NavLink>
         <NavLink to="/profile" style={linkStyle}>Profile</NavLink>
-        <NavLink to="/login" style={linkStyle}>Login</NavLink>
-        <NavLink to="/signup" style={linkStyle}>Sign Up</NavLink>
+
+        {localStorage.getItem("isLoggedIn") === "true" ? (
+  <NavLink to="/" style={linkStyle} onClick={() => {
+    localStorage.removeItem("isLoggedIn");
+  }}>
+    Logout
+  </NavLink>
+) : (
+  <>
+            <NavLink to="/login" style={linkStyle}>Login</NavLink>
+          </>
+)}
       </div>
     </nav>
   );
 }
+
