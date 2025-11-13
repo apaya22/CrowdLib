@@ -6,7 +6,7 @@ from django.urls import path, include
 from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, UserViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
-from social.views import upload_madlib_image
+from image_gen.views import upload_madlib_image
 
 
 router = DefaultRouter()
