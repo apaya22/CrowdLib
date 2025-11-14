@@ -25,6 +25,7 @@ export default function App() {
           <Route path="signup" element={<Signup />} />
           <Route path="madlibs/:id" element={<MadlibPlay />} />
           <Route path="/oauth-return" element={<OAuthReturn />} />
+          
         </Routes>
       </main>
     </div>
