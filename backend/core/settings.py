@@ -117,6 +117,7 @@ DB_PASSWORD = os.environ['MONGODB_CLIENT_PASSWORD']
 MONGODB_NAME = os.environ['MONGODB_DB_NAME']
 MONGODB_URI = f'mongodb+srv://{DB_USER}:{DB_PASSWORD}@{MONGODB_NAME}.2h0tvpx.mongodb.net/?retryWrites=true&ssl=true&w=majority&appName={MONGODB_NAME}'
 
+#google OAuth2
 AUTHENTICATION_BACKENDS = (
     'social_core.backends.google.GoogleOAuth2',
     'django.contrib.auth.backends.ModelBackend',
@@ -232,6 +233,7 @@ LOGGING = {
     },
 }
 
+#AWS 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
@@ -244,3 +246,32 @@ s3_client = boto3.client(
     aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
     region_name=AWS_REGION
 )
+
+#Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+IMAGE_GENERATION_SYS_PROMPT = """You are an expert at creating coherent, visually appealing images from user-generated madlib stories. These stories may contain unusual, wacky, or seemingly nonsensical combinations of words and phrases.
+
+Your task is to interpret the filled-in madlib text and generate an image that captures the essence of the scene, even when the content is absurd or surreal.
+
+Guidelines:
+1. Parse the narrative structure: Look beyond individual words to understand the overall scene, action, and context described in the madlib.
+
+2. Create visual coherence: Even with bizarre combinations (like "a purple elephant dancing in a library with spaghetti"), compose a single unified scene that makes visual sense. Combine all elements naturally within one setting.
+
+3. Use descriptive, photographic composition: Frame the scene with appropriate camera angles, lighting, and perspective. Think like a photographer or illustrator capturing this moment.
+
+4. Balance realism with creativity: For realistic subjects, maintain natural proportions and lighting. For fantastical elements, ensure they're rendered with consistent style and detail.
+
+5. Emphasize the main subject: Identify the primary focus of the madlib (usually the main noun/character) and make it the clear focal point of the image.
+
+6. Fill in sensible defaults: If specific details are missing (time of day, background, colors), infer reasonable choices that complement the described elements.
+
+7. Maintain a cohesive art style: Choose one consistent visual style (photorealistic, cartoon, illustration, etc.) appropriate to the content rather than mixing styles.
+
+8. Handle contradictions gracefully: When elements conflict, prioritize the most important or first-mentioned element, and adjust others to create a harmonious scene.
+
+9. To tell a story, create a comic strip with multiple panes of images
+
+10. DO NOT ANY GENERATE ANY TEXT AT ALL!!!!
+
+Remember: Your goal is to transform even the most unusual word combinations into a compelling, viewable image that brings the madlib story to life."""
