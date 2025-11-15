@@ -134,16 +134,49 @@ function MadlibCard({ item }) {
   return (
     <article className="card explore-card">
       <div className="explore-body">
-        <h3 className="explore-title" style={{marginTop: ".75rem"}}>
+
+        {/* Title */}
+        <h3 className="explore-title" style={{ marginTop: ".75rem" }}>
           <Link to={`/madlibs/${id}`}>{title}</Link>
         </h3>
+
+        {/* Author */}
         <p className="explore-meta">
           <span>{author}</span>
         </p>
+
+        {/* Like + Comment buttons */}
+        <div style={{
+          display: "flex",
+          gap: "1rem",
+          marginTop: ".75rem",
+          fontSize: "1.1rem",
+          alignItems: "center"
+        }}>
+          
+          {/* ❤️ Like icon (no functionality yet) */}
+          <span style={{ cursor: "pointer", userSelect: "none" }}>
+            ❤️
+          </span>
+
+          {/* 💬 Comment icon → goes to /madlibs/:id/comments */}
+          <Link
+            to={`/madlibs/${id}/comments`}
+            style={{
+              textDecoration: "none",
+              cursor: "pointer",
+              fontSize: "1.1rem"
+            }}
+          >
+            💬
+          </Link>
+        </div>
+
       </div>
     </article>
   );
 }
+
 
 function ExploreSkeleton() {
   return (
