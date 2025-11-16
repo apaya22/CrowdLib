@@ -1,3 +1,4 @@
+#This file is primarily AI generated
 """
 Integration tests for image generation workflow.
 
@@ -11,7 +12,6 @@ Note: These tests require:
 """
 
 from django.test import TestCase
-from bson import ObjectId
 from madlibs.models import UserFilledMadlibs, MadLibTemplate
 from users.models import UserOperations
 from image_gen.models import ImageGenerationModel
