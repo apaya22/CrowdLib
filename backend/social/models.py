@@ -23,6 +23,15 @@ class LikeModel:
             "created_at": datetime.now()
         }
         return self.collection.insert_one(like_doc).inserted_id
+    
+    def unlike_post(self, user_id, post_id):
+        """Remove a like from a post"""
+        result = self.collection.delete_one({
+            "user_id": ObjectId(user_id),
+            "post_id": ObjectId(post_id),
+            "comment_id": None
+        })
+        return result.deleted_count > 0 
 
     def like_comment(self, user_id, comment_id):
         """Add a like to a comment"""
@@ -33,6 +42,15 @@ class LikeModel:
             "created_at": datetime.now()
         }
         return self.collection.insert_one(like_doc).inserted_id
+    
+    def unlike_comment(self, user_id, comment_id):
+        """Remove a like from a comment"""
+        result = self.collection.delete_one({
+            "user_id": ObjectId(user_id),
+            "post_id": None,
+            "comment_id": ObjectId(comment_id)
+        })
+        return result.deleted_count > 0
 
     def get_post_likes_count(self, post_id):
         """Count likes on a post"""
