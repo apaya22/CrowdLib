@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework import status, permissions, viewsets
 from .models import UserOperations
+from core.sessions import SessionStore
 import logging
 
 logger = logging.getLogger(__name__)
@@ -85,6 +86,7 @@ class UserViewSet(viewsets.ViewSet):
             'update': [permissions.IsAuthenticated],
             'destroy': [permissions.IsAuthenticated],
             'profile': [permissions.IsAuthenticated],
+            'logout': [permissions.IsAuthenticated],
             'admin_stats': [permissions.IsAdminUser],
         }
 
@@ -412,6 +414,42 @@ class UserViewSet(viewsets.ViewSet):
             return Response(user, status=status.HTTP_200_OK)
         except Exception as e:
             logger.error(f"Error retrieving user profile: {e}")
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['post'])
+    def logout(self, request):
+        """
+        Log out the current user by deleting their session (authenticated only).
+
+        POST /api/users/logout/
+        """
+        try:
+            logger.debug(f"Logging out user: {request.user.email}")
+
+            # Get the session key from the request
+            session_key = request.session.session_key
+
+            if not session_key:
+                logger.warning(f"No session found for user: {request.user.email}")
+                return Response(
+                    {'error': 'No active session found'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Delete the session using SessionStore
+            session_store = SessionStore(session_key)
+            session_store.delete()
+
+            logger.info(f"User logged out successfully: {request.user.email}")
+            return Response(
+                {'message': 'Logged out successfully'},
+                status=status.HTTP_200_OK
+            )
+        except Exception as e:
+            logger.error(f"Error logging out user: {e}")
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
