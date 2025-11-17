@@ -239,6 +239,39 @@ class UserFilledMadlibs:
             logger.error(f"Error updating filled madlib {filled_madlib_id}: {e}")
             return False
 
+    def update_image_url(self, filled_madlib_id: str, image_url: str) -> bool:
+        """
+        Update the image URL for a filled madlib
+
+        Args:
+            filled_madlib_id: String representation of MongoDB ObjectId
+            image_url: URL of the uploaded image
+
+        Returns:
+            True if update was successful, False otherwise
+        """
+        try:
+            logger.debug(f"Updating image URL for madlib {filled_madlib_id}")
+            result = self.collection.update_one(
+                {'_id': ObjectId(filled_madlib_id)},
+                {'$set': {
+                    'image_url': image_url,
+                    'updated_at': datetime.now(timezone.utc)
+                }}
+            )
+            if result.matched_count == 0:
+                logger.warning(f"Madlib not found: {filled_madlib_id}")
+                return False
+
+            if result.modified_count > 0:
+                logger.info(f"Image URL updated for madlib: {filled_madlib_id}")
+            else:
+                logger.info(f"No changes made to madlib (same URL): {filled_madlib_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error updating image URL for madlib {filled_madlib_id}: {e}")
+            return False
+
     def delete_filled_madlib(self, filled_madlib_id: str) -> bool:
         """
         Delete a filled madlib

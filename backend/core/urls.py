@@ -7,7 +7,7 @@ from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, UserViewSet
 from social.views import LikeViewSet, CommentViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
-from image_gen.views import upload_madlib_image
+from image_gen.views import ImageGenerationViewSet
 
 
 router = DefaultRouter()
@@ -16,6 +16,8 @@ router.register(r'templates', MadLibTemplateViewSet, basename='template')
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'likes', LikeViewSet, basename='post-likes')
 router.register(r'comments', CommentViewSet, basename='post-comments')
+router.register(r'image-gen', ImageGenerationViewSet, basename='image-gen')
+
 
 
 #home view for backend server, lists available endpoints
@@ -26,18 +28,16 @@ def home_view(request):
             "/auth/login/google-oauth2/",
             "/api/users/",
             "/api/madlibs/",
+            "/api/templates/",
+            "/api/image-gen/",
         ]
     })
 
 urlpatterns = [
     path('api/', include(router.urls)),
     path('', lambda request: redirect('/auth/login/google-oauth2/')),
-    path('', home_view),  
+    path('', home_view),
     path('admin/', admin.site.urls),
     path('auth/', include('social_django.urls', namespace='social')),
     path('api/debug/oauth/', debug_oauth_data, name='debug-oauth'),
-    # User API endpoints
-    path('api/debug/oauth/', debug_oauth_data, name='debug-oauth'),
-    # Madlib image upload endpoint
-    path('api/madlibs/<str:madlib_id>/upload-image/', upload_madlib_image, name='upload-madlib-image'),
 ]
