@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.urls import path, include
 from django.shortcuts import redirect
 from users.views import dashboard, debug_oauth_data, UserViewSet
+from social.views import LikeViewSet, CommentViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
 from image_gen.views import upload_madlib_image
 
@@ -13,6 +14,8 @@ router = DefaultRouter()
 router.register(r'madlibs', UserFilledMadlibsViewSet, basename='madlib')
 router.register(r'templates', MadLibTemplateViewSet, basename='template')
 router.register(r'users', UserViewSet, basename='user')
+router.register(r'likes', LikeViewSet, basename='post-likes')
+router.register(r'comments', CommentViewSet, basename='post-comments')
 
 
 #home view for backend server, lists available endpoints
