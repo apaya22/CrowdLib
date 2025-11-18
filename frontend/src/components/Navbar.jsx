@@ -36,16 +36,18 @@ export default function Navbar() {
     checkLogin();
   }, []);
 
-  // Logout Handler (added the cookie header, to check if needed for POST, can be commented out)
+  // Logout Handler
   const handleLogout = async () => {
     const csrf = getCookie("csrftoken");
     console.log("CSRF token:", csrf);
+    console.log("All cookies:", document.cookie);
 
     try {
       const res = await fetch(`${API_ROOT}/users/logout/`, {
         method: "POST",
         credentials: "include",
         headers: {
+          "Content-Type": "application/json",
           ...(csrf ? { "X-CSRFToken": csrf } : {}),
         },
       });
@@ -55,9 +57,14 @@ export default function Navbar() {
       if (res.ok) {
         setIsLoggedIn(false);
         window.location.href = "/";
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Logout failed:", res.status, errorData);
+        alert(`Logout failed: ${errorData.detail || errorData.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error("Logout error:", err);
+      alert("Network error during logout");
     }
   };
 

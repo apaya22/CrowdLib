@@ -1,5 +1,6 @@
 # users/views.py
 from django.http import HttpResponse
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
 from rest_framework import status, permissions, viewsets
@@ -396,6 +397,7 @@ class UserViewSet(viewsets.ViewSet):
     def profile(self, request):
         """
         Get current logged-in user's profile (authenticated only).
+        Also ensures CSRF cookie is set for subsequent POST requests.
 
         GET /api/users/profile/
         """
@@ -411,7 +413,11 @@ class UserViewSet(viewsets.ViewSet):
                 )
 
             logger.info(f"Profile retrieved for user: {request.user.email}")
-            return Response(user, status=status.HTTP_200_OK)
+            # Ensure CSRF cookie is set for frontend
+            response = Response(user, status=status.HTTP_200_OK)
+            # This will trigger Django to set the CSRF cookie
+            request.META["CSRF_COOKIE_USED"] = True
+            return response
         except Exception as e:
             logger.error(f"Error retrieving user profile: {e}")
             return Response(

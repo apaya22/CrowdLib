@@ -80,6 +80,15 @@ CORS_ALLOWED_ORIGINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+# CSRF settings for cross-origin requests
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:3000",
+]
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
