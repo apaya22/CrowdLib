@@ -37,7 +37,7 @@ export default function Navbar() {
     checkLogin();
   }, []);
 
-  // Logout Handler
+  // Logout Handler (added the cookie header, to check if needed for POST, can be commented out)
   const handleLogout = async () => {
     const csrf = getCookie("csrftoken");
     console.log("CSRF token:", csrf);
@@ -47,7 +47,6 @@ export default function Navbar() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Content-Type": "application/json",
           ...(csrf ? { "X-CSRFToken": csrf } : {}),
         },
       });
