@@ -1,48 +1,74 @@
 import { NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-const API_BASE = ""; // Vite proxy will forward to Django
+const API_ROOT = "http://127.0.0.1:8000/api";
+const API_BASE = "";
 
-const linkStyle = ({ isActive }) => ({
-  textDecoration: "none",
-  padding: "0.5rem 0.75rem",
-  fontWeight: isActive ? 700 : 500,
-});
+function getCookie(name) {
+  const cookieString = document.cookie;
+  const cookies = cookieString.split("; ");
+
+  for (let cookie of cookies) {
+    const [key, val] = cookie.split("=");
+    if (key === name) return decodeURIComponent(val);
+  }
+  return null;
+}
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check Login Status
   useEffect(() => {
-    console.log("Fetching profile to detect login…");
+    async function checkLogin() {
+      try {
+        const res = await fetch(`${API_BASE}/users/profile/`, {
+          credentials: "include",
+        });
 
-    fetch(`${API_BASE}/api/users/profile/`, {
-      credentials: "include",
-    })
-      .then((res) => {
-        console.log("Profile response:", res.status); // DEBUG
-        if (res.status === 200) {
-          setIsLoggedIn(true);
-        } else {
-          setIsLoggedIn(false);
-        }
-      })
-      .catch((err) => {
-        console.log("Profile fetch error:", err);
+        console.log("Profile response:", res.status);
+        setIsLoggedIn(res.ok); // 200 → logged in
+      } catch (err) {
+        console.error("Profile fetch error:", err);
         setIsLoggedIn(false);
-      });
+      }
+    }
+
+    checkLogin();
   }, []);
 
-  const handleLogout = () => {
-    fetch(`${API_BASE}/api/logout/`, {
-      method: "POST",
-      credentials: "include",
-    })
-      .then(() => {
-        console.log("Logged out.");
+  // Logout Handler
+  const handleLogout = async () => {
+    const csrf = getCookie("csrftoken");
+    console.log("CSRF token:", csrf);
+
+    try {
+      const res = await fetch(`${API_ROOT}/users/logout/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrf ? { "X-CSRFToken": csrf } : {}),
+        },
+      });
+
+      console.log("Logout response:", res.status);
+
+      if (res.ok) {
         setIsLoggedIn(false);
-      })
-      .catch((err) => console.log("Logout error:", err));
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
   };
+
+  const linkStyle = ({ isActive }) => ({
+    marginLeft: "20px",
+    textDecoration: "none",
+    color: isActive ? "#663399" : "black",
+    fontWeight: isActive ? "bold" : "normal",
+  });
 
   return (
     <nav className="nav">
@@ -56,15 +82,15 @@ export default function Navbar() {
 
         {isLoggedIn ? (
           <span
-    onClick={handleLogout}
-    style={{
-      ...linkStyle({ isActive: false }),
-      cursor: "pointer",
-      color: "#663399" // same purple
-    }}
-  >
-          Logout
-        </span>
+            onClick={handleLogout}
+            style={{
+              ...linkStyle({ isActive: false }),
+              cursor: "pointer",
+              color: "#663399",
+            }}
+          >
+            Logout
+          </span>
         ) : (
           <NavLink to="/login" style={linkStyle}>Login</NavLink>
         )}
