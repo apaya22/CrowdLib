@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-const API_BASE = ""; // Vite proxy will forward to Django
+const API_ROOT = "http://localhost:8000/api";
 
 const linkStyle = ({ isActive }) => ({
   textDecoration: "none",
@@ -13,7 +13,11 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    console.log("Fetching profile to detect login…");
+    async function checkLogin() {
+      try {
+        const res = await fetch(`${API_ROOT}/users/profile/`, {
+          credentials: "include",
+        });
 
     fetch(`${API_BASE}/api/users/profile/`, {
       credentials: "include",
@@ -29,6 +33,26 @@ export default function Navbar() {
       .catch((err) => {
         console.log("Profile fetch error:", err);
         setIsLoggedIn(false);
+      }
+    }
+
+    checkLogin();
+  }, []);
+
+  // Logout Handler
+  const handleLogout = async () => {
+    const csrf = getCookie("csrftoken");
+    console.log("CSRF token:", csrf);
+    console.log("All cookies:", document.cookie);
+
+    try {
+      const res = await fetch(`${API_ROOT}/users/logout/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(csrf ? { "X-CSRFToken": csrf } : {}),
+        },
       });
   }, []);
 
@@ -40,8 +64,16 @@ export default function Navbar() {
       .then(() => {
         console.log("Logged out.");
         setIsLoggedIn(false);
-      })
-      .catch((err) => console.log("Logout error:", err));
+        window.location.href = "/";
+      } else {
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Logout failed:", res.status, errorData);
+        alert(`Logout failed: ${errorData.detail || errorData.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+      alert("Network error during logout");
+    }
   };
 
   return (

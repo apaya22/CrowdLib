@@ -47,7 +47,7 @@ export default function Create() {
 
   // API base
   const API_ROOT =
-    (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+    (import.meta.env.VITE_API_BASE || "http://localhost:8000/api").replace(/\/$/, "");
   
   // search box
   const [input, setInput] = useState("");

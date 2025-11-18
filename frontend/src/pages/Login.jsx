@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-export const BACKEND = "http://127.0.0.1:8000";     // use the SAME host you used in Django & Google
+export const BACKEND = "http://localhost:8000";     // use the SAME host you used in Django & Google
 export const FRONTEND = window.location.origin;     // e.g., http://localhost:5173
 
 export function startGoogleOAuth(nextPath = "/oauth-return") {
