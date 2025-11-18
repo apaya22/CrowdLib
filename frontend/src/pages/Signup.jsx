@@ -1,7 +1,7 @@
 // frontend/src/pages/Signup.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-const BACKEND = "http://127.0.0.1:8000";     // <- define this
+const BACKEND = "http://localhost:8000";     // <- define this
 const API = `${BACKEND}/api/users/`;
 const FRONTEND = window.location.origin; // http://localhost:5173
 

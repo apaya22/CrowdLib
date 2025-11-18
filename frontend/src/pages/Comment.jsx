@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
-const API_ROOT = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api").replace(/\/$/, "");
+const API_ROOT = (import.meta.env.VITE_API_BASE || "http://localhost:8000/api").replace(/\/$/, "");
 
 export default function Comment() {
   const { id } = useParams();

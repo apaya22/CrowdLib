@@ -427,29 +427,40 @@ class UserViewSet(viewsets.ViewSet):
         POST /api/users/logout/
         """
         try:
-            logger.debug(f"Logging out user: {request.user.email}")
+            logger.debug(f"Logging out user: {request.user.email if request.user.is_authenticated else 'Anonymous'}")
+
+            # Access the session to ensure it's loaded
+            # This triggers session creation if it doesn't exist
+            request.session.modified = True
 
             # Get the session key from the request
             session_key = request.session.session_key
 
             if not session_key:
-                logger.warning(f"No session found for user: {request.user.email}")
+                logger.warning(f"No session key found, flushing session anyway")
+                # Flush the session even if there's no key
+                request.session.flush()
                 return Response(
-                    {'error': 'No active session found'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {'message': 'Logged out successfully'},
+                    status=status.HTTP_200_OK
                 )
+
+            logger.debug(f"Deleting session with key: {session_key}")
 
             # Delete the session using SessionStore
             session_store = SessionStore(session_key)
             session_store.delete()
 
-            logger.info(f"User logged out successfully: {request.user.email}")
+            # Also flush the request session to clear any in-memory data
+            request.session.flush()
+
+            logger.info(f"User logged out successfully: {request.user.email if request.user.is_authenticated else 'N/A'}")
             return Response(
                 {'message': 'Logged out successfully'},
                 status=status.HTTP_200_OK
             )
         except Exception as e:
-            logger.error(f"Error logging out user: {e}")
+            logger.error(f"Error logging out user: {e}", exc_info=True)
             return Response(
                 {'error': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -10,7 +10,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-%s^cc61v(u)=*_owba2+a@hnfnxa%a8vgnt26v!&0@21_*jz7w'
 DEBUG = True
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -102,6 +102,8 @@ SESSION_COOKIE_SAMESITE = 'Lax'  # Allow cookies to be sent with OAuth redirects
 SESSION_COOKIE_HTTPONLY = True   # Prevent JavaScript access to session cookie
 SESSION_COOKIE_SECURE = False    # Set to True in production with HTTPS
 SESSION_COOKIE_AGE = 1209600     # 2 weeks in seconds
+SESSION_COOKIE_DOMAIN = None     # Allow cookies to work across localhost/127.0.0.1
+SESSION_SAVE_EVERY_REQUEST = True  # Ensure session is saved on every request
 
 
 LANGUAGE_CODE = 'en-us'
