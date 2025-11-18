@@ -86,7 +86,7 @@ class UserViewSet(viewsets.ViewSet):
             'update': [permissions.IsAuthenticated],
             'destroy': [permissions.IsAuthenticated],
             'profile': [permissions.IsAuthenticated],
-            'logout': [permissions.IsAuthenticated],
+            'logout': [permissions.AllowAny],
             'admin_stats': [permissions.IsAdminUser],
         }
 
