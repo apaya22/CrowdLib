@@ -3,9 +3,6 @@ import { Link } from "react-router-dom";
 export default function PostCard({ username, title, excerpt, likes, comments }) {
   return (
     <article className="card post-card">
-      <div className="post-card__image img-placeholder" aria-hidden>
-        <span>Post Image</span>
-      </div>
       <div className="post-card__body">
         <div className="post-card__meta">
           <span className="post-card__user">{username}</span>
@@ -18,7 +15,7 @@ export default function PostCard({ username, title, excerpt, likes, comments }) 
           <span>❤️ {likes}</span>
           <span>💬 {comments}</span>
         </div>
-        <Link className="btn btn--tiny" to="/login">View</Link>
+        <Link className="btn btn--tiny" to="/explore">View</Link>
       </div>
     </article>
   );

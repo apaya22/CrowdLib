@@ -13,8 +13,8 @@ export default function Login() {
     <div className="auth auth--center">
       <section className="auth-card" role="region" aria-labelledby="login-title">
         <div className="auth-header">
-          <h1 id="login-title" className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">Log in to continue to CrowdLib</p>
+          <h1 id="login-title" className="auth-title">Sign in to Crowdlib</h1>
+          <p className="auth-subtitle">Log in with Google to continue</p>
         </div>
 
         {/* Google OAuth here */}
@@ -22,53 +22,10 @@ export default function Login() {
           <GoogleIcon />
           <span>Continue with Google</span>
         </button>
-
-        <AuthDivider label="or" />
-
-        {/* Basic form , doesn't work! */}
-        <form className="auth-form" onSubmit={(e) => e.preventDefault()} noValidate>
-          <label className="auth-label" htmlFor="email">Email</label>
-          <input
-            id="email"
-            className="auth-input"
-            type="email"
-            name="email"
-            placeholder="you@example.com"
-            autoComplete="email"
-          />
-
-          <label className="auth-label" htmlFor="password">Password</label>
-          <input
-            id="password"
-            className="auth-input"
-            type="password"
-            name="password"
-            placeholder="••••••••"
-            autoComplete="current-password"
-          />
-
-          <div className="auth-row">
-            <Link className="auth-link" to="/login">Forgot password?</Link>
-          </div>
-
-          <button className="btn btn--primary btn--full" type="submit">Log In</button>
-        </form>
-
-        <p className="auth-footer">
-          Don’t have an account?{" "}
-          <Link className="auth-link" to="/signup">Sign up</Link>
+        <p className="auth-caption">
+          You’ll be redirected to Google to securely sign in.
         </p>
       </section>
-    </div>
-  );
-}
-
-function AuthDivider({ label = "or" }) {
-  return (
-    <div className="auth-divider" role="separator" aria-label={label}>
-      <span className="auth-divider__line" />
-      <span className="auth-divider__label">{label}</span>
-      <span className="auth-divider__line" />
     </div>
   );
 }
