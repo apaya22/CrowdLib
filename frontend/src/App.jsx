@@ -4,9 +4,7 @@ import Explore from "./pages/Explore.jsx";
 import Create from "./pages/Create.jsx";
 import Profile from "./pages/Profile.jsx";
 import Login from "./pages/Login.jsx";
-import Signup from "./pages/Signup.jsx";
 import MadlibPlay from "./pages/MadlibPlay.jsx";
-
 import Navbar from "./components/Navbar.jsx";
 import Comment from "./pages/Comment.jsx";
 import "./App.css";
@@ -23,7 +21,6 @@ export default function App() {
           <Route path="create" element={<Create />} />
           <Route path="profile" element={<Profile />} />
           <Route path="login" element={<Login />} />
-          <Route path="signup" element={<Signup />} />
           <Route path="madlibs/:id" element={<MadlibPlay />} />
           
           <Route path="/madlibs/:id/comments" element={<Comment />} />

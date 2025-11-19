@@ -1,6 +1,11 @@
 import { Link } from "react-router-dom";
 import FeatureCard from "../components/FeatureCard.jsx";
 import PostCard from "../components/PostCard.jsx";
+import heroImg from "../assets/madlibhero.png";
+import img1 from "../assets/bear.jpeg";
+import img2 from "../assets/ducky.jpeg";
+import img3 from "../assets/creature.jpeg";
+import img4 from "../assets/dog.jpeg";
 
 export default function Home() {
   return (
@@ -17,16 +22,10 @@ export default function Home() {
             <Link className="btn btn--primary" to="/login">Log In</Link>
             <Link className="btn btn--ghost" to="/explore">Explore</Link>
           </div>
-          <p className="hero__footnote">
-            New here? <Link to="/signup">Create an account</Link>
-          </p>
         </div>
 
-        {/* Replace this with a real image later */}
         <div className="hero__image">
-          <div className="img-placeholder">
-            <span>Hero Image Placeholder</span>
-          </div>
+          <img src={heroImg} alt="CrowdLib hero" className="hero-img" />
         </div>
       </section>
 
@@ -56,10 +55,10 @@ export default function Home() {
         <p className="section__subtitle">Drop in eye-catching visuals alongside your stories.</p>
 
         <div className="gallery">
-          <div className="img-placeholder img-placeholder--wide"><span>Image 1</span></div>
-          <div className="img-placeholder"><span>Image 2</span></div>
-          <div className="img-placeholder"><span>Image 3</span></div>
-          <div className="img-placeholder"><span>Image 4</span></div>
+          <img src={img1} alt="Gallery 1" className="gallery-img gallery-img--wide" />
+          <img src={img2} alt="Gallery 2" className="gallery-img" />
+          <img src={img3} alt="Gallery 3" className="gallery-img" />
+          <img src={img4} alt="Gallery 4" className="gallery-img" />
         </div>
       </section>
 
@@ -117,7 +116,6 @@ export default function Home() {
           <p>Create, explore, and collaborate on endless stories.</p>
           <div className="footer__actions">
             <Link className="btn btn--primary" to="/login">Log In</Link>
-            <Link className="btn btn--ghost" to="/signup">Sign Up</Link>
           </div>
         </div>
       </section>
