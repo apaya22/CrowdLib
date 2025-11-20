@@ -50,8 +50,9 @@ export default function Profile() {
     }
 
     try {
-      const res = await fetch(`${BACKEND}/api/users/delete/`, {
-        method: "POST",
+      const id = data._id;
+      const res = await fetch(`${BACKEND}/api/users/${id}/`, {
+        method: "DELETE",
         credentials: "include",
         headers: {
           "X-CSRFToken": csrf,
