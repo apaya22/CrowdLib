@@ -164,7 +164,7 @@ async function fetchMadlibs(q = "") {
   );
 }
 
-/* 🔥 UPDATED MadlibCard with like count + toggle */
+/*MadlibCard with like count + toggle */
 function MadlibCard({ item }) {
   const id = item.id || item._id;
   const title = item.title || "Untitled Madlib";
