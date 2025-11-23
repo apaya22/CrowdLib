@@ -350,6 +350,7 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
             'update': [permissions.IsAuthenticated],
             'destroy': [permissions.IsAuthenticated],
             'profile': [permissions.IsAuthenticated],
+            'by_creator': [permissions.AllowAny],
             'admin_stats': [permissions.IsAdminUser],
         }
 
@@ -528,7 +529,7 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
         """
         if not request.user.is_authenticated:
             return Response({'error': 'Not authenticated'})
-        if pk:
+        if not pk:
             return Response(
                 {'error': 'No data provided for update'},
                 status=status.HTTP_400_BAD_REQUEST
