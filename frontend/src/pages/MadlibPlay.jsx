@@ -83,32 +83,7 @@ export default function MadlibPlay() {
     setResult(filled);
 
     // optional auto-save if logged in
-    try {
-      if (!me?._id) return;
-
-      const inputted_blanks = Object.entries(values).map(([k, v]) => ({
-        id: String(k),
-        input: String(v),
-      }));
-
-      const res = await fetch(`${API_ROOT}/madlibs/create/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          template_id: String(id),
-          creator_id: String(me._id),
-          inputted_blanks,
-        }),
-      });
-
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        console.warn("Save failed:", res.status, t);
-      }
-    } catch (e) {
-      console.warn("Save error:", e);
-    }
+    
   }
 
   // separate Save button logic
