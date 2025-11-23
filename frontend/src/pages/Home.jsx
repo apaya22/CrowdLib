@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { BACKEND } from "../config"; 
 import FeatureCard from "../components/FeatureCard.jsx";
 import PostCard from "../components/PostCard.jsx";
 import heroImg from "../assets/madlibhero.png";
@@ -8,6 +10,25 @@ import img3 from "../assets/creature.jpeg";
 import img4 from "../assets/dog.jpeg";
 
 export default function Home() {
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  useEffect(() => {
+    async function checkLogin() {
+      try {
+        const res = await fetch(`${BACKEND}/api/users/profile/`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        setLoggedIn(res.ok);
+      } catch {
+        setLoggedIn(false);
+      }
+    }
+
+    checkLogin();
+  }, []);
+
   return (
     <div className="home">
       {/* Intro */}
@@ -19,7 +40,12 @@ export default function Home() {
             explore creations from the community. Post, like and comment with all of your friends.
           </p>
           <div className="hero__actions">
-            <Link className="btn btn--primary" to="/login">Log In</Link>
+
+            {/* Hide login button when logged in */}
+            {!loggedIn && (
+              <Link className="btn btn--primary" to="/login">Log In</Link>
+            )}
+
             <Link className="btn btn--ghost" to="/explore">Explore</Link>
           </div>
         </div>
@@ -114,8 +140,12 @@ export default function Home() {
         <div className="footer">
           <h3>Ready to join the fun?</h3>
           <p>Create, explore, and collaborate on endless stories.</p>
+
           <div className="footer__actions">
-            <Link className="btn btn--primary" to="/login">Log In</Link>
+            {/* Hide login in footer if already logged in */}
+            {!loggedIn && (
+              <Link className="btn btn--primary" to="/login">Log In</Link>
+            )}
           </div>
         </div>
       </section>
