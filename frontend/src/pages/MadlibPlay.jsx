@@ -134,11 +134,10 @@ export default function MadlibPlay() {
       //SAVE 
       const csrftoken = getCSRFToken();
       console.log("HEADER TOKEN:", getCSRFToken());
-console.log("COOKIE TOKEN:", document.cookie);
+      console.log("COOKIE TOKEN:", document.cookie);
 
-      console.log(csrftoken);
       console.log(`${API_ROOT}/madlibs/create/`)
-      const res = await fetch(`${API_ROOT}/madlibs/create/`, {
+      const res = await fetch(`${API_ROOT}/madlibs/`, {
         method: "POST",
         credentials: "include",
         headers: {
