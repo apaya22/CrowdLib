@@ -83,7 +83,6 @@ export default function MadlibPlay() {
     setResult(filled);
 
     // optional auto-save if logged in
-    
   }
 
   // separate Save button logic
