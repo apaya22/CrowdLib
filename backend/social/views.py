@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from users.models import UserOperations
 from .models import LikeModel, CommentModel
 import logging
+from bson import ObjectId
 from bson.errors import InvalidId
 
 logger = logging.getLogger(__name__)
