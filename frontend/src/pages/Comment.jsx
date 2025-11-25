@@ -247,11 +247,6 @@ export default function Comment() {
       return;
     }
 
-    if (!isFilledMadlib) {
-      alert("Template comments are not yet supported.");
-      return;
-    }
-
     try {
       const csrfToken = getCookie('csrftoken');
       
