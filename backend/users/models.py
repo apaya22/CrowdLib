@@ -2,6 +2,7 @@ from core.db_connect import get_collection
 from datetime import datetime, timezone
 from bson.objectid import ObjectId
 from bson.errors import InvalidId
+from pymongo.errors import DuplicateKeyError
 import logging
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,29 @@ logger = logging.getLogger(__name__)
 class UserOperations:
     def __init__(self):
         self.collection = get_collection('users')
+        self._create_indexes()
+
+    def _create_indexes(self):
+        """
+        Create database indexes for efficient user queries.
+        Called automatically during initialization.
+        """
+        try:
+            logger.debug("Creating user indexes")
+
+            # Email lookups 
+            self.collection.create_index([("email", 1)], unique=True, name="idx_email_unique")
+
+            # Username lookups
+            self.collection.create_index([("username", 1)], unique=True, name="idx_username_unique")
+
+            # OAuth provider + ID
+            self.collection.create_index([("oauth_provider", 1), ("oauth_id", 1)],
+                                         unique=True, name="idx_oauth_unique")
+
+            logger.info("User indexes created successfully")
+        except Exception as e:
+            logger.error(f"Error creating user indexes: {e}")
 
     def create(self, username: str, email: str, oauth_provider: str, oauth_id: str,
                profile_picture = None, bio = None) -> str:
@@ -54,9 +78,23 @@ class UserOperations:
             'following_count': 0
         }
 
-        result = self.collection.insert_one(user_data)
-        logger.info(f"User created: {result.inserted_id} ({username})")
-        return str(result.inserted_id)
+        try:
+            result = self.collection.insert_one(user_data)
+            logger.info(f"User created: {result.inserted_id} ({username})")
+            return str(result.inserted_id)
+        except DuplicateKeyError as e:
+            # Handle race condition where user was created between check and insert
+            logger.warning(f"User creation failed - duplicate key error: {username}, {email}")
+            # Determine which field caused the duplicate
+            error_msg = str(e)
+            if 'username' in error_msg:
+                raise ValueError("Username already exists")
+            elif 'email' in error_msg:
+                raise ValueError("Email already exists")
+            elif 'oauth' in error_msg:
+                raise ValueError("OAuth account already linked to another user")
+            else:
+                raise ValueError("User already exists")
 
     def get_by_id(self, user_id: str):
         """

@@ -8,6 +8,7 @@ from users.views import dashboard, debug_oauth_data, UserViewSet
 from social.views import LikeViewSet, CommentViewSet
 from madlibs.views import MadLibTemplateViewSet, UserFilledMadlibsViewSet
 from image_gen.views import ImageGenerationViewSet
+from feed.views import FeedViewSet
 
 
 router = DefaultRouter()
@@ -17,6 +18,7 @@ router.register(r'users', UserViewSet, basename='user')
 router.register(r'likes', LikeViewSet, basename='post-likes')
 router.register(r'comments', CommentViewSet, basename='post-comments')
 router.register(r'image-gen', ImageGenerationViewSet, basename='image-gen')
+router.register(r'feed', FeedViewSet, basename='feed')
 
 
 
@@ -30,6 +32,9 @@ def home_view(request):
             "/api/madlibs/",
             "/api/templates/",
             "/api/image-gen/",
+            "/api/feed/top-liked/",
+            "/api/feed/recent/",
+            "/api/feed/discussed/",
         ]
     })
 

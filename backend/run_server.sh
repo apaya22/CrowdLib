@@ -4,9 +4,9 @@
 # Change to the backend directory
 cd "$(dirname "$0")"
 
-# Function to find and activate virtual environment
+#find and activate venv
 activate_venv() {
-    # Common venv locations to check (in order of preference)
+    
     local venv_paths=(
         "venv"
         ".venv"
