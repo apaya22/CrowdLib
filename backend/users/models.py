@@ -10,6 +10,29 @@ logger = logging.getLogger(__name__)
 class UserOperations:
     def __init__(self):
         self.collection = get_collection('users')
+        self._create_indexes()
+
+    def _create_indexes(self):
+        """
+        Create database indexes for efficient user queries.
+        Called automatically during initialization.
+        """
+        try:
+            logger.debug("Creating user indexes")
+
+            # Email lookups 
+            self.collection.create_index([("email", 1)], unique=True, name="idx_email_unique")
+
+            # Username lookups
+            self.collection.create_index([("username", 1)], unique=True, name="idx_username_unique")
+
+            # OAuth provider + ID
+            self.collection.create_index([("oauth_provider", 1), ("oauth_id", 1)],
+                                         unique=True, name="idx_oauth_unique")
+
+            logger.info("User indexes created successfully")
+        except Exception as e:
+            logger.error(f"Error creating user indexes: {e}")
 
     def create(self, username: str, email: str, oauth_provider: str, oauth_id: str,
                profile_picture = None, bio = None) -> str:

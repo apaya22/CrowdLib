@@ -41,8 +41,17 @@ class FeedService:
             self.filled_madlibs_coll.create_index([("public", 1), ("created_at", -1)])
             self.filled_madlibs_coll.create_index([("creator_id", 1)])
 
-            # likes indexes
-            self.likes_coll.create_index([("post_id", 1), ("comment_id", 1)])
+            # likes indexes (ENHANCED - compound for better coverage)
+            self.likes_coll.create_index([
+                ("user_id", 1),
+                ("post_id", 1),
+                ("comment_id", 1)
+            ], unique=True, name="idx_user_post_comment_unique")
+
+            self.likes_coll.create_index([
+                ("post_id", 1),
+                ("comment_id", 1)
+            ], name="idx_post_comment")
 
             # comments indexes
             self.comments_coll.create_index([("post_id", 1), ("created_at", -1)])
