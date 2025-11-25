@@ -3,7 +3,7 @@ from users.models import UserOperations
 
 class UserOperationsTest(TestCase):
     def test_create_user(self):
-        """Test creating a new user with OAuth"""
+        """Test creating a new user"""
         user_operator = UserOperations()
         user_id = user_operator.create(
             username='john_doe',
