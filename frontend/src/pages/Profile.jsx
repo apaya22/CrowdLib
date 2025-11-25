@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { BACKEND } from "../config";
+import { useNavigate } from "react-router-dom";
+
+const BACKEND = "http://localhost:8000";
 
 // Get CSRF cookie
 function getCookie(name) {
@@ -10,14 +12,16 @@ function getCookie(name) {
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [madlibs, setMadlibs] = useState([]);
   const [madlibsLoading, setMadlibsLoading] = useState(true);
   const [templates, setTemplates] = useState({});
   const [expandedMadlibs, setExpandedMadlibs] = useState({});
+  const [likeCounts, setLikeCounts] = useState({}); // NEW: Store like counts
 
-  {/* fetch profile */}
+  /* fetch profile */
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -44,7 +48,7 @@ export default function Profile() {
     loadProfile();
   }, []);
 
-  {/* fetch user's madlibs */}
+  /* fetch user's madlibs */
   useEffect(() => {
     async function loadMadlibs() {
       if (!data?._id) return;
@@ -84,6 +88,25 @@ export default function Profile() {
         }
         
         setTemplates(templateData);
+
+        // NEW: Fetch like counts for each madlib
+        const likeData = {};
+        for (const madlib of userMadlibs) {
+          try {
+            const likeRes = await fetch(`${BACKEND}/api/likes/${madlib._id}/count/`, {
+              credentials: "include",
+            });
+            if (likeRes.ok) {
+              const likeJson = await likeRes.json();
+              likeData[madlib._id] = likeJson.likes_count || 0;
+            }
+          } catch (err) {
+            console.error(`Failed to load likes for madlib ${madlib._id}:`, err);
+            likeData[madlib._id] = 0;
+          }
+        }
+        
+        setLikeCounts(likeData);
       } catch (err) {
         console.error("Error fetching madlibs:", err);
       } finally {
@@ -94,7 +117,7 @@ export default function Profile() {
     loadMadlibs();
   }, [data]);
 
-  {/* delete account */}
+  /* delete account */
   async function handleDeleteAccount() {
     const csrf = getCookie("csrftoken");
 
@@ -125,7 +148,7 @@ export default function Profile() {
     }
   }
 
-  {/* delete madlib */}
+  /* delete madlib */
   async function handleDeleteMadlib(madlibId) {
     const csrf = getCookie("csrftoken");
 
@@ -179,7 +202,7 @@ export default function Profile() {
     }
   }, [data]);
 
-  {/* Handler Update */}
+  /* Handler Update */
   async function handleUpdate() {
     const csrf = getCookie("csrftoken");
     if (!csrf) {
@@ -219,7 +242,7 @@ export default function Profile() {
     }
   }
 
-  {/* Render story with filled blanks */}
+  /* Render story with filled blanks */
   function renderFilledStory(template, filledBlanks) {
     if (!template?.template || !Array.isArray(template.template)) {
       return "Story not available";
@@ -244,7 +267,7 @@ export default function Profile() {
     return result;
   }
 
-  {/* Toggle expand/collapse */}
+  /* Toggle expand/collapse */
   function toggleExpand(madlibId) {
     setExpandedMadlibs(prev => ({
       ...prev,
@@ -252,7 +275,7 @@ export default function Profile() {
     }));
   }
 
-  {/* Render */}
+  /* Render */
   if (loading) {
     return <div style={{ padding: "20px" }}>Loading profile…</div>;
   }
@@ -395,7 +418,7 @@ export default function Profile() {
         )}
       </div>
 
-      {/* MADLIBS SECTION */}
+      {/* MY MADLIBS SECTION */}
       <div style={{ marginTop: "40px", maxWidth: "800px" }}>
         <h2>All My Madlibs ({madlibs.length})</h2>
 
@@ -408,6 +431,7 @@ export default function Profile() {
             {madlibs.map((madlib) => {
               const template = templates[madlib.template_id];
               const isExpanded = expandedMadlibs[madlib._id];
+              const likeCount = likeCounts[madlib._id] ?? 0; // NEW: Get like count
               
               return (
                 <div
@@ -428,6 +452,22 @@ export default function Profile() {
                   <div style={{ marginBottom: "10px", fontSize: "14px", color: "#666" }}>
                     Created: {new Date(madlib.created_at).toLocaleDateString()} at{" "}
                     {new Date(madlib.created_at).toLocaleTimeString()}
+                  </div>
+
+                  {/* NEW: Show like count */}
+                  <div 
+                    style={{ 
+                      marginBottom: "15px", 
+                      fontSize: "16px", 
+                      display: "flex", 
+                      alignItems: "center",
+                      gap: "8px"
+                    }}
+                  >
+                    <span style={{ fontSize: "20px" }}>❤️</span>
+                    <span style={{ fontWeight: "500", color: "#333" }}>
+                      {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+                    </span>
                   </div>
 
                   {/* Show/Hide Full Story */}
@@ -466,6 +506,22 @@ export default function Profile() {
                     }}
                   >
                     {isExpanded ? "Hide Story" : "Show Full Story"}
+                  </button>
+
+                  <button
+                    onClick={() => navigate(`/filled-madlibs/${madlib._id}/comment`)}
+                    style={{
+                      padding: "6px 12px",
+                      backgroundColor: "#5a0fb3",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      marginRight: "10px",
+                    }}
+                  >
+                    View & Comment
                   </button>
 
                   <button

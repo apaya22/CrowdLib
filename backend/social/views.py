@@ -271,6 +271,10 @@ class CommentViewSet(viewsets.ViewSet):
     def list_post_comments(self, request, pk=None):
         try:
             comments = self.comment_service.get_post_comments(pk)
+            for c in comments:
+                c['_id'] = str(c['_id'])
+                c['user_id'] = str(c['user_id'])
+                c['post_id'] = str(c['post_id'])
             return Response({'post_id': pk, 'comments': comments}, status=status.HTTP_200_OK)
 
         except InvalidId:
