@@ -7,6 +7,7 @@ import Login from "./pages/Login.jsx";
 import MadlibPlay from "./pages/MadlibPlay.jsx";
 import Navbar from "./components/Navbar.jsx";
 import Comment from "./pages/Comment.jsx";
+import Posts from "./pages/Posts.jsx";
 import "./App.css";
 
 export default function App() {
@@ -22,8 +23,9 @@ export default function App() {
           <Route path="profile" element={<Profile />} />
           <Route path="login" element={<Login />} />
           <Route path="madlibs/:id" element={<MadlibPlay />} />
-          
+          <Route path="posts" element={<Posts />} />
           <Route path="/madlibs/:id/comments" element={<Comment />} />
+          <Route path="filled-madlibs/:id/comment" element={<Comment />} />
         </Routes>
       </main>
     </div>
