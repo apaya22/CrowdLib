@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-const BACKEND = "http://localhost:8000";
+import { BACKEND } from "../config";
 
 // Get CSRF cookie
 function getCookie(name) {
@@ -19,9 +18,9 @@ export default function Profile() {
   const [madlibsLoading, setMadlibsLoading] = useState(true);
   const [templates, setTemplates] = useState({});
   const [expandedMadlibs, setExpandedMadlibs] = useState({});
-  const [likeCounts, setLikeCounts] = useState({}); // NEW: Store like counts
+  const [likeCounts, setLikeCounts] = useState({});
 
-  /* fetch profile */
+  {/* fetch profile */}
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -48,7 +47,7 @@ export default function Profile() {
     loadProfile();
   }, []);
 
-  /* fetch user's madlibs */
+  {/* fetch user's madlibs */}
   useEffect(() => {
     async function loadMadlibs() {
       if (!data?._id) return;
@@ -89,7 +88,7 @@ export default function Profile() {
         
         setTemplates(templateData);
 
-        // NEW: Fetch like counts for each madlib
+        // Fetch like counts for each madlib
         const likeData = {};
         for (const madlib of userMadlibs) {
           try {
@@ -117,7 +116,7 @@ export default function Profile() {
     loadMadlibs();
   }, [data]);
 
-  /* delete account */
+  {/* delete account */}
   async function handleDeleteAccount() {
     const csrf = getCookie("csrftoken");
 
@@ -148,7 +147,7 @@ export default function Profile() {
     }
   }
 
-  /* delete madlib */
+  {/* delete madlib */}
   async function handleDeleteMadlib(madlibId) {
     const csrf = getCookie("csrftoken");
 
@@ -202,7 +201,7 @@ export default function Profile() {
     }
   }, [data]);
 
-  /* Handler Update */
+  {/* Handler Update */}
   async function handleUpdate() {
     const csrf = getCookie("csrftoken");
     if (!csrf) {
@@ -242,7 +241,7 @@ export default function Profile() {
     }
   }
 
-  /* Render story with filled blanks */
+  {/* Render story with filled blanks */}
   function renderFilledStory(template, filledBlanks) {
     if (!template?.template || !Array.isArray(template.template)) {
       return "Story not available";
@@ -267,7 +266,7 @@ export default function Profile() {
     return result;
   }
 
-  /* Toggle expand/collapse */
+  {/* Toggle expand/collapse */}
   function toggleExpand(madlibId) {
     setExpandedMadlibs(prev => ({
       ...prev,
@@ -275,7 +274,7 @@ export default function Profile() {
     }));
   }
 
-  /* Render */
+  {/* Render */}
   if (loading) {
     return <div style={{ padding: "20px" }}>Loading profile…</div>;
   }
@@ -431,7 +430,7 @@ export default function Profile() {
             {madlibs.map((madlib) => {
               const template = templates[madlib.template_id];
               const isExpanded = expandedMadlibs[madlib._id];
-              const likeCount = likeCounts[madlib._id] ?? 0; // NEW: Get like count
+              const likeCount = likeCounts[madlib._id] ?? 0;
               
               return (
                 <div
@@ -454,7 +453,7 @@ export default function Profile() {
                     {new Date(madlib.created_at).toLocaleTimeString()}
                   </div>
 
-                  {/* NEW: Show like count */}
+                  {/* Show like count */}
                   <div 
                     style={{ 
                       marginBottom: "15px", 
@@ -469,6 +468,22 @@ export default function Profile() {
                       {likeCount} {likeCount === 1 ? 'like' : 'likes'}
                     </span>
                   </div>
+
+                  {/* Show image if exists - ALWAYS VISIBLE */}
+                  {madlib.image_url && (
+                    <div style={{ marginBottom: "15px" }}>
+                      <img
+                        src={madlib.image_url}
+                        alt="Madlib visualization"
+                        style={{
+                          maxWidth: "100%",
+                          height: "auto",
+                          borderRadius: "8px",
+                          border: "1px solid #ddd",
+                        }}
+                      />
+                    </div>
+                  )}
 
                   {/* Show/Hide Full Story */}
                   {isExpanded && (
@@ -538,21 +553,6 @@ export default function Profile() {
                   >
                     Delete
                   </button>
-
-                  {/* Show image if exists */}
-                  {madlib.image_url && (
-                    <div style={{ marginTop: "15px" }}>
-                      <img
-                        src={madlib.image_url}
-                        alt="Madlib visualization"
-                        style={{
-                          maxWidth: "100%",
-                          height: "auto",
-                          borderRadius: "8px",
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               );
             })}

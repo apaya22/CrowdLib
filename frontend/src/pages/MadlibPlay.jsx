@@ -29,7 +29,7 @@ function getCookie(name) {
 
 export default function MadlibPlay() {
   const { id } = useParams(); // template id from /madlibs/:id
-
+  const [generatedImage, setGeneratedImage] = useState(null);
   const [template, setTemplate] = useState(null);
   const [values, setValues] = useState({});
   const [me, setMe] = useState(null);
@@ -75,15 +75,100 @@ export default function MadlibPlay() {
   }, [id]);
 
   // run & generate the madlib
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
+async function onSubmit(e) {
+  e.preventDefault();
+  setError("");
 
-    const filled = renderStory(template.template, values);
-    setResult(filled);
+  const filled = renderStory(template.template, values);
+  setResult(filled);
 
-    // optional auto-save if logged in
+  // Clear previous image
+  setGeneratedImage(null);
+
+  // Check if user is logged in
+  if (!me?._id) {
+    alert("You must be logged in to generate images.");
+    return;
   }
+
+  try {
+    const inputted_blanks = Object.entries(values).map(([k, v]) => ({
+      id: String(k),
+      input: String(v),
+    }));
+
+    const csrftoken = getCSRFToken();
+
+    // STEP 1: Save the madlib first to get a real ID
+    console.log("Saving madlib...");
+    const saveRes = await fetch(`${API_ROOT}/madlibs/`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken,
+      },
+      body: JSON.stringify({
+        template_id: String(id),
+        creator_id: String(me._id),
+        inputted_blanks,
+      }),
+    });
+
+    if (!saveRes.ok) {
+      const txt = await saveRes.text().catch(() => "");
+      console.warn("Save failed:", saveRes.status, txt);
+      alert("Failed to save madlib.");
+      return;
+    }
+
+    const saveData = await saveRes.json();
+    const realMadlibId = saveData.id; // Get the real madlib ID from response
+    console.log("Madlib saved with ID:", realMadlibId);
+
+    // STEP 2: Generate image using the real madlib ID
+    console.log("Generating image...");
+    const imgRes = await fetch(`${API_ROOT}/image-gen/generate/`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken,
+      },
+      body: JSON.stringify({
+        madlib_id: realMadlibId,  // Use the real ID now
+        madlib_text: filled,
+        extra_prompt_args: {
+          style: "watercolor painting",
+          aspect_ratio: "1:1",
+        },
+      }),
+    });
+
+    if (!imgRes.ok) {
+      console.error("Image generation error:", await imgRes.text());
+      alert("Failed to generate image, but madlib was saved!");
+      return;
+    }
+
+    const imgData = await imgRes.json();
+    console.log("Generated image URL:", imgData.url);
+
+    // Display the generated image
+    setGeneratedImage(imgData.url || null);
+    setSaveStatus("Saved with image!");
+    
+  } catch (err) {
+    console.error("Error:", err);
+    alert("An error occurred.");
+  }
+}
+
+// Update the onSave function to avoid duplicate saves
+async function onSave() {
+  alert("Your madlib is already saved! Generate button saves automatically.");
+}
+
 
   // separate Save button logic
   async function onSave() {
@@ -148,83 +233,152 @@ export default function MadlibPlay() {
   if (!template) return <main style={{ padding: "2rem" }}>Not found.</main>;
 
   return (
-    <main style={{ maxWidth: 900, margin: "2rem auto", padding: "0 1rem" }}>
-      <h1>{template.title || "Untitled"}</h1>
+    <main
+  style={{
+    maxWidth: 500,
+    margin: "2rem auto",
+    padding: "1.5rem",
+    background: "#fafafa",
+    borderRadius: 12,
+    border: "1px solid #e5e5e5",
+    boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
+  }}
+>
+  <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>
+    {template.title || "Untitled"}
+  </h1>
 
-      {(template.blanks?.length ?? 0) === 0 ? (
-        <p style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}>
-          {template.template || template.story || "No story provided."}
-        </p>
-      ) : (
-        <form onSubmit={onSubmit} style={{ display: "grid", gap: "0.75rem", marginTop: "1rem" }}>
-          {(template.blanks || []).map((b) => {
-            const label =
-              b.label ||
-              b.prompt ||
-              b.hint ||
-              b.wordType ||
-              b.type ||
-              (b.placeholder && b.placeholder.toLowerCase() !== "blank" ? b.placeholder : null) ||
-              `Blank #${b.id}`;
+  {(template.blanks?.length ?? 0) === 0 ? (
+    <p style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}>
+      {template.template || template.story || "No story provided."}
+    </p>
+  ) : (
+    <form
+      onSubmit={onSubmit}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "1rem",
+        marginTop: "1rem",
+      }}
+    >
+      {(template.blanks || []).map((b) => {
+        const label =
+          b.label ||
+          b.prompt ||
+          b.hint ||
+          b.wordType ||
+          b.type ||
+          (b.placeholder &&
+          b.placeholder.toLowerCase() !== "blank"
+            ? b.placeholder
+            : null) ||
+          `Blank #${b.id}`;
 
-            const ph =
-              b.placeholder && b.placeholder.toLowerCase() !== "blank"
-                ? b.placeholder
-                : label;
+        const ph =
+          b.placeholder && b.placeholder.toLowerCase() !== "blank"
+            ? b.placeholder
+            : label;
 
-            return (
-              <label key={b.id} style={{ display: "grid", gap: "0.25rem" }}>
-                <span style={{ opacity: 0.7 }}>{label}</span>
-                <input
-                  value={values[String(b.id)] ?? ""}
-                  onChange={(e) => setValues((v) => ({ ...v, [String(b.id)]: e.target.value }))}
-                  placeholder={ph}
-                  autoComplete="off"
-                  required
-                />
-              </label>
-            );
-          })}
-
-          <button type="submit">Generate</button>
-        </form>
-      )}
-
-      {result && (
-        <section
-          style={{
-            marginTop: "1.5rem",
-            padding: "1rem",
-            border: "1px solid #eee",
-            borderRadius: 12,
-          }}
-        >
-          <h3>Result</h3>
-          <p style={{ whiteSpace: "pre-wrap" }}>{result}</p>
-
-          {/* SAVE BUTTON */}
-          <button
+        return (
+          <label
+            key={b.id}
             style={{
-              marginTop: "1rem",
-              padding: "0.6rem 1.2rem",
-              borderRadius: "8px",
-              background: "#007bff",
-              color: "white",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "1rem",
+              display: "flex",
+              flexDirection: "column",
+              fontSize: "0.9rem",
             }}
-            onClick={onSave}
           >
-            Save Madlib
-          </button>
+            <span style={{ marginBottom: 4, opacity: 0.75 }}>{label}</span>
 
-          {/* SAVE STATUS */}
-          {saveStatus && (
-            <p style={{ marginTop: "0.5rem", color: "#555" }}>{saveStatus}</p>
-          )}
-        </section>
-      )}
-    </main>
+            <input
+              value={values[String(b.id)] ?? ""}
+              onChange={(e) =>
+                setValues((v) => ({
+                  ...v,
+                  [String(b.id)]: e.target.value,
+                }))
+              }
+              placeholder={ph}
+              autoComplete="off"
+              required
+              style={{
+                padding: "0.55rem 0.75rem",
+                border: "1px solid #ccc",
+                borderRadius: 6,
+                fontSize: "0.95rem",
+              }}
+            />
+          </label>
+        );
+      })}
+
+      <button
+        type="submit"
+        style={{
+          marginTop: "0.5rem",
+          padding: "0.6rem",
+          borderRadius: 8,
+          fontSize: "1rem",
+          background: "#28a745",
+          color: "white",
+          border: "none",
+          cursor: "pointer",
+        }}
+      >
+        Generate
+      </button>
+    </form>
+  )}
+
+{result && (
+  <section
+    style={{
+      marginTop: "2rem",
+      padding: "1rem",
+      border: "1px solid #ddd",
+      borderRadius: 10,
+      background: "white",
+    }}
+  >
+    <h3>Result</h3>
+    <p style={{ whiteSpace: "pre-wrap" }}>{result}</p>
+
+    {generatedImage && (
+      <img
+        src={generatedImage}
+        alt="Generated illustration"
+        style={{
+          width: "100%",
+          maxWidth: "600px",
+          borderRadius: "10px",
+          marginTop: "1rem",
+        }}
+      />
+    )}
+
+    <button
+  type="submit"
+  style={{
+    marginTop: "0.5rem",
+    padding: "0.6rem",
+    borderRadius: 8,
+    fontSize: "1rem",
+    background: "#28a745",
+    color: "white",
+    border: "none",
+    cursor: "pointer",
+  }}
+>
+  Save & Generate Image
+</button>
+
+    {saveStatus && (
+      <p style={{ marginTop: "0.5rem", color: "#555" }}>{saveStatus}</p>
+    )}
+    </section>
+  )}
+
+  </main>
   );
 }
