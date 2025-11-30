@@ -1,4 +1,5 @@
-#This file is primarily AI generated
+#NOTICE: This file is primarily AI generated
+
 """
 Integration tests for image generation workflow.
 
