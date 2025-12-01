@@ -260,11 +260,13 @@ s3_client = boto3.client(
 
 #Gemini
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-IMAGE_GENERATION_SYS_PROMPT = """You are an expert at creating coherent, visually appealing images from user-generated madlib stories. These stories may contain unusual, wacky, or seemingly nonsensical combinations of words and phrases.
-
+IMAGE_GENERATION_SYS_PROMPT = """
 Your task is to interpret the filled-in madlib text and generate an image that captures the essence of the scene, even when the content is absurd or surreal.
 
 Guidelines:
+
+CRITICAL INSTRUCTION: DO NOT ANY GENERATE ANY TEXT AT ALL IN THE IMAGE!!!!
+
 1. Parse the narrative structure: Look beyond individual words to understand the overall scene, action, and context described in the madlib.
 
 2. Create visual coherence: Even with bizarre combinations (like "a purple elephant dancing in a library with spaghetti"), compose a single unified scene that makes visual sense. Combine all elements naturally within one setting.
@@ -281,8 +283,7 @@ Guidelines:
 
 8. Handle contradictions gracefully: When elements conflict, prioritize the most important or first-mentioned element, and adjust others to create a harmonious scene.
 
-9. To tell a story, create a comic strip with multiple panes of images
+9. To tell a story, create a comic strip with multiple panes of images without text
 
-10. DO NOT ANY GENERATE ANY TEXT AT ALL!!!!
 
-Remember: Your goal is to transform even the most unusual word combinations into a compelling, viewable image that brings the madlib story to life."""
+Remember: DO NOT ANY GENERATE ANY TEXT IN THE IMAGE AT ALL!!!!"""
