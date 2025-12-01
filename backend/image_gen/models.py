@@ -52,7 +52,7 @@ class ImageGenerationModel:
 
             # Generate image using Imagen API
             response = self.client.models.generate_images(
-                model='imagen-4.0-fast-generate-001',
+                model='imagen-4.0-ultra-generate-001',
                 prompt=full_prompt,
                 config=config  # type: ignore[arg-type]
             )
