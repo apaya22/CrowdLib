@@ -2,6 +2,7 @@
 REM CrowdLib Project Initialization Script for Windows
 REM This script sets up the development environment for the CrowdLib project (Django + React)
 REM Run this script after cloning the repository in Command Prompt or PowerShell
+REM Disclosure: This script was AI Generated
 
 setlocal enabledelayedexpansion
 

@@ -1,4 +1,5 @@
 @echo off
+REM Disclosure: This script was AI Generated
 REM CrowdLib Master Start Server Script for Windows
 REM Automatically launches frontend and backend servers in separate terminal windows
 REM Usage: start_servers.bat

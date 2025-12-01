@@ -3,6 +3,7 @@
 # CrowdLib Project Initialization Script
 # This script sets up the development environment for the CrowdLib project (Django + React)
 # Run this script after cloning the repository: bash init.sh
+# Disclosure: This script was AI Generated
 
 set -e
 

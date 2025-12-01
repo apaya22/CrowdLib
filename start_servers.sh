@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# Disclosure: This document was AI Generated
 # CrowdLib Master Start Server Script (macOS/Linux)
 # Automatically launches frontend and backend servers in separate terminal windows
 # Usage: bash start_servers.sh

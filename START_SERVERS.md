@@ -2,6 +2,8 @@
 
 Quick and easy way to start both the frontend and backend development servers simultaneously.
 
+## Disclosure: This document was AI Generated
+
 ## Overview
 
 The master start server scripts automatically launch both servers in separate terminal windows. No need to manually open terminals and run commands - just run one script!

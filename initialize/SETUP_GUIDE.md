@@ -2,6 +2,8 @@
 
 Complete step-by-step instructions for setting up the CrowdLib development environment on macOS, Linux, and Windows.
 
+## Disclosure: This document was AI Generated
+
 ## Table of Contents
 1. [Prerequisites](#prerequisites)
 2. [Automated Setup (macOS/Linux)](#automated-setup-macoslinux)
