@@ -359,6 +359,35 @@ class UserFilledMadlibsViewSet(viewsets.ViewSet):
             for permission in permission_classes.get(self.action, [permissions.IsAdminUser])
         ]
 
+    def list(self, request):
+        """
+        List all user-filled madlibs with optional limit.
+        Query Parameters:
+        - limit: Maximum number of madlibs to retrieve (default: 100)
+        GET /api/madlibs/?limit=50
+        """
+        try:
+            logger.debug("Listing user-filled madlibs")
+            limit = request.query_params.get('limit', 100)
+
+            try:
+                limit = int(limit)
+                if limit <= 0:
+                    limit = 100
+            except ValueError:
+                limit = 100
+
+            madlibs = self.madlibs_service.get_all(limit=limit)
+            logger.info(f"Listed {len(madlibs)} user-filled madlibs")
+
+            return Response(
+                {"count": len(madlibs), "results": madlibs},
+                status=status.HTTP_200_OK,
+            )
+
+        except Exception as e:
+            logger.error(f"Error listing user-filled madlibs: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def create(self, request):
         """

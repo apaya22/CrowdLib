@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { getCSRFToken } from "../config";
 
 const API_ROOT = "http://localhost:8000/api";
@@ -29,6 +29,7 @@ function getCookie(name) {
 
 export default function MadlibPlay() {
   const { id } = useParams(); // template id from /madlibs/:id
+  const navigate = useNavigate();
   const [generatedImage, setGeneratedImage] = useState(null);
   const [template, setTemplate] = useState(null);
   const [values, setValues] = useState({});
@@ -226,6 +227,43 @@ async function onSave() {
       setSaveStatus("Save failed.");
     }
   }
+    // delete templates
+    async function handleDeleteTemplate() {
+    if (!me?._id) {
+      alert("You must be logged in to delete templates.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this template? This cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      const csrftoken = getCSRFToken();
+
+      const res = await fetch(`${API_ROOT}/templates/${id}/`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "X-CSRFToken": csrftoken,
+        },
+      });
+
+      if (res.status === 204 || res.status === 200) {
+        alert("Template deleted.");
+        // change this route to wherever you list templates
+        navigate("/"); 
+      } else {
+        const txt = await res.text().catch(() => "");
+        console.error("Delete failed:", res.status, txt);
+        alert("Failed to delete template.");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      alert("An error occurred while deleting the template.");
+    }
+  }
 
   // states
   if (loading) return <main style={{ padding: "2rem" }}>Loading…</main>;
@@ -244,9 +282,41 @@ async function onSave() {
     boxShadow: "0 2px 6px rgba(0,0,0,0.06)",
   }}
 >
-  <h1 style={{ textAlign: "center", marginBottom: "1rem" }}>
+  <header
+  style={{
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "0.75rem",
+    marginBottom: "1rem",
+  }}
+>
+  <h1 style={{ margin: 0, fontSize: "1.5rem" }}>
     {template.title || "Untitled"}
   </h1>
+
+  {/* show delete button if logged in */}
+  {me?._id && (
+    <button
+      type="button"
+      onClick={handleDeleteTemplate}
+      style={{
+        padding: "0.4rem 0.8rem",
+        borderRadius: 8,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: "#e11d48",
+        color: "#fff",
+        fontSize: "0.9rem",
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+      }}
+    >
+      Delete
+    </button>
+  )}
+</header>
+
 
   {(template.blanks?.length ?? 0) === 0 ? (
     <p style={{ whiteSpace: "pre-wrap", marginTop: "1rem" }}>
