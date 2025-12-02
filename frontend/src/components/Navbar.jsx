@@ -87,6 +87,7 @@ export default function Navbar() {
       <div className="links">
         <NavLink to="/" style={linkStyle} end>Home</NavLink>
         <NavLink to="/explore" style={linkStyle}>Explore</NavLink>
+        <NavLink to="/posts" style={linkStyle}>Posts</NavLink>
         <NavLink to="/create" style={linkStyle}>Create</NavLink>
         <NavLink to="/profile" style={linkStyle}>Profile</NavLink>
 
