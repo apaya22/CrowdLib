@@ -9,7 +9,6 @@ logger = logging.getLogger(__name__)
 class MadLibTemplate:
     def __init__(self):
         self.collection = get_collection('story_templates')
-        self.create_indexs()
         
     def create_indexs(self):
         self.collection.create_index([('title', 1)])
@@ -165,22 +164,6 @@ class MadLibTemplate:
 class UserFilledMadlibs:
     def __init__(self):
         self.collection = get_collection('filled_madlibs')
-        self._create_indexes()
-
-    def _create_indexes(self):
-        """
-        Create database indexes for efficient filled madlib queries.
-        Called automatically during initialization.
-        """
-        try:
-            logger.debug("Creating filled madlib indexes")
-
-            # MEDIUM: Template lookups (used in aggregations)
-            self.collection.create_index([("template_id", 1)], name="idx_template_id")
-
-            logger.info("Filled madlib indexes created successfully")
-        except Exception as e:
-            logger.error(f"Error creating filled madlib indexes: {e}")
 
     def new_filled_madlib(self, template_id: str, creator_id: str, inputted_blanks: List[Dict]) -> Optional[str]:
         """
@@ -357,4 +340,39 @@ class UserFilledMadlibs:
             return results
         except Exception as e:
             logger.error(f"Error retrieving madlibs by creator {creator_id}: {e}")
+            return []
+        
+    def get_all(self, limit: int = 100) -> List[Dict]:
+        """
+        Retrieve all user-filled madlibs with optional limit.
+
+        Args:
+            limit: Maximum number of filled madlibs to retrieve.
+
+        Returns:
+            List[Dict]: All filled madlibs up to the limit.
+        """
+        try:
+            logger.debug(f"Retrieving all user-filled madlibs (limit={limit})")
+
+            results = list(
+                self.collection
+                .find({})
+                .sort("created_at", -1) 
+                .limit(limit)
+            )
+
+            for result in results:
+                if isinstance(result.get('_id'), ObjectId):
+                    result['_id'] = str(result['_id'])
+                if isinstance(result.get('template_id'), ObjectId):
+                    result['template_id'] = str(result['template_id'])
+                if isinstance(result.get('creator_id'), ObjectId):
+                    result['creator_id'] = str(result['creator_id'])
+
+            logger.info(f"Retrieved {len(results)} user-filled madlibs")
+            return results
+
+        except Exception as e:
+            logger.error(f"Error retrieving user-filled madlibs: {e}")
             return []

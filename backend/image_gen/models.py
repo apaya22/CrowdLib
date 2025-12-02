@@ -1,5 +1,6 @@
 from django.db import models
-from google import genai
+#from google import genai
+import google.generativeai as genai
 from core.settings import GEMINI_API_KEY, IMAGE_GENERATION_SYS_PROMPT
 import logging
 import tempfile
