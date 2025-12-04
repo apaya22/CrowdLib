@@ -8,9 +8,7 @@ vi.mock("../config", () => ({
   getCSRFToken: () => "mock-csrf-token",
 }));
 
-// ------------------------------
-// Helpers
-// ------------------------------
+// Helper function
 function renderWithRouter(ui, { route = "/madlibs/1" } = {}) {
   return render(
     <MemoryRouter initialEntries={[route]}>
@@ -48,9 +46,7 @@ beforeEach(() => {
   document.cookie = "";
 });
 
-// =====================================================
-// 1. LOADING STATE
-// =====================================================
+// render test
 describe("MadlibPlay — loading state", () => {
   it("shows loading state initially", () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -71,9 +67,7 @@ describe("MadlibPlay — loading state", () => {
   });
 });
 
-// =====================================================
-// 2. ERROR STATE
-// =====================================================
+// Error Test
 describe("MadlibPlay — error state", () => {
   it("shows error when template fetch fails", async () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -97,9 +91,7 @@ describe("MadlibPlay — error state", () => {
   });
 });
 
-// =====================================================
-// 3. NOT FOUND
-// =====================================================
+// unfound Test
 describe("MadlibPlay — not found", () => {
   it("shows 'Not found' when template returns null", async () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -120,16 +112,12 @@ describe("MadlibPlay — not found", () => {
     renderWithRouter(<MadlibPlay />);
 
     await waitFor(() => {
-      // The component crashes with "Cannot read properties of null"
-      // Instead of checking for "Not found", let's check for the error message
       expect(screen.getByText(/Cannot read properties of null/i)).toBeInTheDocument();
     });
   });
 });
 
-// =====================================================
-// 4. FORM RENDERING
-// =====================================================
+// Form Render tests
 describe("MadlibPlay — form behavior", () => {
   it("renders title and blanks", async () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -183,9 +171,7 @@ describe("MadlibPlay — form behavior", () => {
   });
 });
 
-// =====================================================
-// 5. GENERATION
-// =====================================================
+//Story tests
 describe("MadlibPlay — generating story", () => {
   it("fills in the story on Generate", async () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -270,9 +256,7 @@ describe("MadlibPlay — generating story", () => {
   });
 });
 
-// =====================================================
-// 6. SAVE — automatic
-// =====================================================
+// Save test
 describe("MadlibPlay — auto save", () => {
   it("automatically saves on Generate", async () => {
     const fetchSpy = vi.spyOn(global, "fetch").mockImplementation((url) => {
@@ -324,9 +308,7 @@ describe("MadlibPlay — auto save", () => {
   });
 });
 
-// =====================================================
-// 7. IMAGE GENERATION
-// =====================================================
+// Image generation tests
 describe("MadlibPlay — image generation", () => {
   it("generates an image and shows preview", async () => {
     vi.spyOn(global, "fetch").mockImplementation((url) => {
